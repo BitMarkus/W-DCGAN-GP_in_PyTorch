@@ -217,9 +217,6 @@ class Train():
         # LOSS / OPTIMIZER #
         ####################
 
-        # Create batch of latent vectors that we will use to visualize the progression of the generator
-        fixed_noise = self._create_noise(self.num_samples, self.latent_vector_size, shape="2D")
-
         # Establish convention for real and fake labels during training
         real_label = 1.
         fake_label = 0.
@@ -242,10 +239,6 @@ class Train():
         # D(G(z)): average discriminator outputs for the all fake batch. The first number is before D is updated and the second number is after D is updated. 
         #   These numbers should start near 0 and converge to 0.5 as G gets better.
         history = {"G_loss": [], "D_loss": [], "D_x": [], "D_G_z1": [], "D_G_z2": []}
-
-        # Lists to keep track of progress
-        iters = 0 
-        # img_list = []   
 
         print("\nStarting training loop...")
 
@@ -322,16 +315,6 @@ class Train():
                     history["G_loss"].append(errG.item())
                     history["D_loss"].append(errD.item())
 
-                    # Check how the generator is doing by saving G's output on fixed_noise
-                    ################################################################################################################################
-                    # if(iters % 500 == 0) or ((epoch == self.num_epochs-1) and (i == len(self.dataloader)-1)):
-                    #     with torch.no_grad():
-                    #         fake = netG(fixed_noise).detach().cpu()
-                    #     img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
-                    ################################################################################################################################
-
-                    iters += 1
-
                 ######################
                 # SAVE TRAINING DATA #
                 ######################
@@ -357,36 +340,3 @@ class Train():
             print(f'Loss_D: {errD.item():.4f}, Loss_G: {errG.item():.4f}, D(x): {D_x:.4f}, D(G(z)): {D_G_z1:.4f} / {D_G_z2:.4f}')
 
         print("Training finished!")
-
-
-        
-
-"""
-# Visualizes training progression as animated GIF
-def _print_training_progress(self, img_list):
-    # Visualization of G's progression
-    fig = plt.figure(figsize=(8,8))
-    plt.axis("off")
-    ims = [[plt.imshow(np.transpose(i,(1,2,0)), animated=True)] for i in img_list]
-    ani = animation.ArtistAnimation(fig, ims, interval=1000, repeat_delay=1000, blit=True)
-    HTML(ani.to_jshtml()) 
-
-# Prints examples of real and fake images after training
-def _print_training_examples(self, img_list):
-    # Real Images vs. Fake Images
-    # Grab a batch of real images from the dataloader
-    real_batch = next(iter(self.dataloader))
-    # Plot the real images
-    plt.figure(figsize=(15,15))
-    plt.subplot(1,2,1)
-    plt.axis("off")
-    plt.title("Real Images")
-    plt.imshow(np.transpose(vutils.make_grid(real_batch[0].to(self.device)[:self.num_samples], padding=5, normalize=True).cpu(),(1,2,0)))
-    # Plot the fake images from the last epoch
-    plt.subplot(1,2,2)
-    plt.axis("off")
-    plt.title("Fake Images")
-    plt.imshow(np.transpose(img_list[-1],(1,2,0)))
-    plt.tight_layout()
-    plt.show()  
-"""
