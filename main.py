@@ -14,15 +14,11 @@ from train import Train
 
 def main():
 
-    ##########
-    # DEVICE #
-    ##########
-
+    # Device
     device = fn.show_cuda_and_versions()
 
-    ########
-    # SEED #
-    ########
+    # Create program folders if they don't exist already
+    fn.create_prg_folders()
 
     # Set random seed for reproducibility
     # manualSeed = 369
@@ -32,18 +28,11 @@ def main():
     torch.manual_seed(manualSeed)
     # torch.use_deterministic_algorithms(True) # Needed for reproducible results
 
-    ########
-    # DATA #
-    ########
-
     # Create a dataset object and load training images
     ds = Dataset()
     dataloader = ds.load_training_dataset()
 
-    ############
-    # TRAINING #
-    ############
-
+    # Train on dataset
     train_object = Train(device, dataloader)
     train_object()
 
