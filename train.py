@@ -268,14 +268,11 @@ class Train():
                     # Calculate gradients for D in backward pass
                     errD_real.backward()
                     D_x = output.mean().item()
-                    # Add D(x) value to history
-                    history["D_x"].append(D_x)
 
                     ## Train with all-fake batch
                     # Generate batch of latent vectors
                     # noise = torch.randn(batch_size, self.latent_vector_size, 1, 1, device=self.device)
                     noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-
                     # Generate fake image batch with G
                     fake = netG(noise)
                     label.fill_(fake_label)
@@ -286,8 +283,6 @@ class Train():
                     # Calculate the gradients for this batch, accumulated (summed) with previous gradients
                     errD_fake.backward()
                     D_G_z1 = output.mean().item()
-                    # Add D(G(z)) value to history
-                    history["D_G_z1"].append(D_G_z1)
                     # Compute error of D as sum over the fake and the real batches
                     errD = errD_real + errD_fake
                     # Update D
@@ -306,14 +301,8 @@ class Train():
                     # Calculate gradients for G
                     errG.backward()
                     D_G_z2 = output.mean().item()
-                    # Add D(G(z)) value to history
-                    history["D_G_z2"].append(D_G_z2)
                     # Update G
                     optimizerG.step()
-
-                    # Save Losses for plotting later
-                    history["G_loss"].append(errG.item())
-                    history["D_loss"].append(errD.item())
 
                 ######################
                 # SAVE TRAINING DATA #
@@ -336,7 +325,18 @@ class Train():
                         show_plot=False, 
                         save_plot=True)
                     
-            # Print losses and other parameters
+            ##################
+            # UPDATE HISTORY #
+            ##################
+
+            # Update history every epoch
+            history["D_x"].append(D_x)
+            history["D_G_z1"].append(D_G_z1)
+            history["D_G_z2"].append(D_G_z2)
+            history["G_loss"].append(errG.item())
+            history["D_loss"].append(errD.item())
+                    
+            # Print history
             print(f'Loss_D: {errD.item():.4f}, Loss_G: {errG.item():.4f}, D(x): {D_x:.4f}, D(G(z)): {D_G_z1:.4f} / {D_G_z2:.4f}')
 
         print("Training finished!")
