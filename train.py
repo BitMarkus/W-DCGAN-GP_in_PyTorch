@@ -217,10 +217,7 @@ class Train():
         # LOSS / OPTIMIZER #
         ####################
 
-        # Create batch of latent vectors that we will use to visualize
-        #  the progression of the generator
-        # fixed_noise = torch.randn(self.num_samples, self.latent_vector_size, 1, 1, device=self.device)
-        # fixed_noise = self._create_noise(self.num_samples, self.latent_vector_size, shape="4D")
+        # Create batch of latent vectors that we will use to visualize the progression of the generator
         fixed_noise = self._create_noise(self.num_samples, self.latent_vector_size, shape="2D")
 
         # Establish convention for real and fake labels during training
@@ -248,7 +245,7 @@ class Train():
 
         # Lists to keep track of progress
         iters = 0 
-        img_list = []   
+        # img_list = []   
 
         print("\nStarting training loop...")
 
@@ -326,10 +323,12 @@ class Train():
                     history["D_loss"].append(errD.item())
 
                     # Check how the generator is doing by saving G's output on fixed_noise
-                    if (iters % 500 == 0) or ((epoch == self.num_epochs-1) and (i == len(self.dataloader)-1)):
-                        with torch.no_grad():
-                            fake = netG(fixed_noise).detach().cpu()
-                        img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
+                    ################################################################################################################################
+                    # if(iters % 500 == 0) or ((epoch == self.num_epochs-1) and (i == len(self.dataloader)-1)):
+                    #     with torch.no_grad():
+                    #         fake = netG(fixed_noise).detach().cpu()
+                    #     img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
+                    ################################################################################################################################
 
                     iters += 1
 
