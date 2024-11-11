@@ -39,10 +39,6 @@ import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 from datetime import datetime
 from tqdm import tqdm
-# import matplotlib.animation as animation
-# from IPython.display import HTML
-# import numpy as np
-
 # Own modules
 from settings import setting
 from generator import Generator

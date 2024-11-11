@@ -14,7 +14,7 @@ setting = {
  
     # Hyperparameter
     "batch_size": 32,                 
-    "num_epochs": 20,              
+    "num_epochs": 5000,              
 
     # Generator
     "gen_learning_rate": 0.0002,
@@ -38,8 +38,8 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                   # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,      # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 20,  # Save generator every x epochs in checkpoints folder
-    "generate_plot_epochs": 10,         # Save loss plot every x epochs
+    "generate_checkpoints_epochs": 1250,  # Save generator every x epochs in checkpoints folder
+    "generate_plot_epochs": 500,         # Save loss plot every x epochs
 
     # Paths
     "pth_data": "data/fibroblasts/",    # Root directory for dataset
