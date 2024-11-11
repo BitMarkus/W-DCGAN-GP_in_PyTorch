@@ -14,7 +14,7 @@ from train import Train
 
 def main():
 
-    # Device
+    # Show system information and select device (cpu or gpu)
     device = fn.show_cuda_and_versions()
 
     # Create program folders if they don't exist already

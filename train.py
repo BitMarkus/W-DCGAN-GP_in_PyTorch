@@ -199,7 +199,6 @@ class Train():
         # print(netD)
         # Apply the weights_init function to randomly initialize all weights
         netD.apply(self._weights_init)
-        
 
         #############
         # GENERATOR #
@@ -236,13 +235,15 @@ class Train():
         # START TRAINING LOOP #
         #######################
 
-        # Metrics for plot history
-        # Generator loss calculated as log(D(G(z)))log(D(G(z)))   
-        # discriminator loss calculated as the sum of losses for the all real and all fake batches (log(D(x))+log(1−D(G(z)))log(D(x))+log(1−D(G(z))))
-        # the average output (across the batch) of the discriminator for the all real batch. This should start close to 1 then 
-        # theoretically converge to 0.5 when G gets better.
-        # average discriminator outputs for the all fake batch. The first number is before D is updated and the second number is after D is updated. 
-        # These numbers should start near 0 and converge to 0.5 as G gets better.
+        # Based on: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
+
+        # Metrics for plot history:
+        # - Loss_G: Generator loss calculated as log(D(G(z)))log(D(G(z)))   
+        # - Loss_D: Discriminator loss calculated as the sum of losses for the all real and all fake batches (log(D(x))+log(1−D(G(z)))log(D(x))+log(1−D(G(z))))
+        # - D(x): The average output (across the batch) of the discriminator for the all real batch. This should start close to 1 then 
+        #   theoretically converge to 0.5 when G gets better.
+        # D(G(z)): average discriminator outputs for the all fake batch. The first number is before D is updated and the second number is after D is updated. 
+        #   These numbers should start near 0 and converge to 0.5 as G gets better.
         history = {"G_loss": [], "D_loss": [], "D_x": [], "D_G_z1": [], "D_G_z2": []}
 
         # Lists to keep track of progress
@@ -361,11 +362,10 @@ class Train():
 
         
 
-
 """
 # Visualizes training progression as animated GIF
 def _print_training_progress(self, img_list):
-    # Visualization of G’s progression
+    # Visualization of G's progression
     fig = plt.figure(figsize=(8,8))
     plt.axis("off")
     ims = [[plt.imshow(np.transpose(i,(1,2,0)), animated=True)] for i in img_list]
