@@ -38,8 +38,8 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                   # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,      # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 1250,  # Save generator every x epochs in checkpoints folder
-    "generate_plot_epochs": 500,         # Save loss plot every x epochs
+    "generate_checkpoints_epochs": 500,  # Save generator every x epochs in checkpoints folder
+    "generate_plot_epochs": 200,         # Save loss plot every x epochs
 
     # Paths
     "pth_data_root": "data/",           # Root directory for all datasets

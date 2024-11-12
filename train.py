@@ -34,11 +34,22 @@
 import torch
 from torch import nn
 import torch.optim as optim
-import torchvision.utils as vutils
-import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 from datetime import datetime
 from tqdm import tqdm
+
+# https://stackoverflow.com/questions/52839758/matplotlib-and-runtimeerror-main-thread-is-not-in-main-loop
+# https://stackoverflow.com/questions/66541812/kochat-in-use-runtimeerror-main-thread-is-not-in-main-loop
+# https://stackoverflow.com/questions/27147300/matplotlib-tcl-asyncdelete-async-handler-deleted-by-the-wrong-thread
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+"""
+# Or try:
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+"""
+
 # Own modules
 from settings import setting
 from generator import Generator
@@ -169,7 +180,6 @@ class Train():
         if show:
             plt.show()
         else:
-        # Close plot
             plt.close()
 
     # Create noise vector(s) for the generator

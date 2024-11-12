@@ -6,8 +6,20 @@ from torchvision.transforms import transforms
 import numpy as np
 from torch.utils.data import DataLoader
 import torchvision.datasets as dset
-import matplotlib.pyplot as plt
 import torchvision.utils as vutils
+
+# https://stackoverflow.com/questions/52839758/matplotlib-and-runtimeerror-main-thread-is-not-in-main-loop
+# https://stackoverflow.com/questions/66541812/kochat-in-use-runtimeerror-main-thread-is-not-in-main-loop
+# https://stackoverflow.com/questions/27147300/matplotlib-tcl-asyncdelete-async-handler-deleted-by-the-wrong-thread
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+"""
+# Or try:
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+"""
+
 # Own modules
 from settings import setting
 

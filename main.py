@@ -1,3 +1,6 @@
+# Literature
+# - https://neptune.ai/blog/gan-failure-modes
+
 import random
 import torch
 import torch.nn.parallel
