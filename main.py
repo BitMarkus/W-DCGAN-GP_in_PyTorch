@@ -29,7 +29,8 @@ def main():
     print("Seed:", manualSeed)
     random.seed(manualSeed)
     torch.manual_seed(manualSeed)
-    # torch.use_deterministic_algorithms(True) # Needed for reproducible results
+    # Needed for reproducible results -> doesn't work with my modified training loop
+    # torch.use_deterministic_algorithms(True) 
 
     # Create a dataset object and load training images
     ds = Dataset()

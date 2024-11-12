@@ -137,7 +137,7 @@ class Train():
         plt.plot(history["D_x"], label="D(x)")
         plt.plot(history["D_G_z1"], label="D(G(x))_1")
         plt.plot(history["D_G_z2"], label="D(G(x))_2")                 
-        plt.xlabel("iterations")
+        plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
         plt.tight_layout()
@@ -145,7 +145,8 @@ class Train():
         if(save_plot):
             filename = self._get_filename(f"Losses_epoch_{epoch}", ".png")
             plt.savefig(str(plot_path) + '/' + filename, bbox_inches='tight') 
-        # Show and save plot
+            plt.close()
+        # Show plot
         if(show_plot):
             plt.show()  
 
@@ -163,7 +164,7 @@ class Train():
     # nrow (int, optional): Number of images displayed in each row of the grid. The final grid size is (num_images // nrow, nrow). Default is 5.
     # show (bool, optional): Determines if the plot should be shown. Default is True.
     # Returns: None. The function outputs a plot of a grid of images.
-    def _plot_images_from_tensor(self, image_tensor, pth_samples, step, num_images=2, nrow=2, show=False):
+    def _plot_images_from_tensor(self, image_tensor, pth_samples, epoch, num_images=2, nrow=2, show=False):
         # Normalize the image tensor to [0, 1]
         image_tensor = (image_tensor + 1) / 2
         # Detach the tensor from its computation graph and move it to the CPU
@@ -175,7 +176,7 @@ class Train():
         # The permute() function is used to rearrange the dimensions of the grid for plotting
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
         # Save images
-        plt.savefig(f"{pth_samples}sample_img_epoch_{step}")
+        plt.savefig(f"{pth_samples}sample_img_epoch_{epoch}")
         # Show the plot if the 'show' parameter is True
         if show:
             plt.show()
@@ -246,7 +247,7 @@ class Train():
         # - Loss_D: Discriminator loss calculated as the sum of losses for the all real and all fake batches (log(D(x))+log(1−D(G(z)))log(D(x))+log(1−D(G(z))))
         # - D(x): The average output (across the batch) of the discriminator for the all real batch. This should start close to 1 then 
         #   theoretically converge to 0.5 when G gets better.
-        # D(G(z)): average discriminator outputs for the all fake batch. The first number is before D is updated and the second number is after D is updated. 
+        # - D(G(z)): average discriminator outputs for the all fake batch. The first number is before D is updated and the second number is after D is updated. 
         #   These numbers should start near 0 and converge to 0.5 as G gets better.
         history = {"G_loss": [], "D_loss": [], "D_x": [], "D_G_z1": [], "D_G_z2": []}
 
@@ -259,7 +260,7 @@ class Train():
 
             # For each batch in the dataloader
             with tqdm(self.dataloader, unit="batch") as tepoch:
-                for i, data in enumerate(tepoch, 0):
+                for step, data in enumerate(tepoch, 0):
 
                     ###############################################################
                     # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z))) #

@@ -57,6 +57,7 @@ class Dataset():
                 # https://github.com/pytorch/vision/issues/288
                 transforms.Normalize((0.5, ), (0.5, )),
                 # Convert to grayscale
+                # Without the next line, the image will have 3 channels instead of four
                 transforms.Grayscale(num_output_channels=1), # <- Grayscale
             ])
             return transformer
