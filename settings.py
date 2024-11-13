@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 32,                 
+    "batch_size": 16,                 
     "num_epochs": 5000,              
 
     # Generator
@@ -17,7 +17,7 @@ setting = {
     "gen_dropout": 0.25,
 
     # Discriminator
-    "disc_learning_rate": 0.0001,
+    "disc_learning_rate": 0.0002,
     "disc_dropout": 0.25,
 
     # Input/output dims

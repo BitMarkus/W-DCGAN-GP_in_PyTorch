@@ -95,10 +95,39 @@ class Train():
         # Path for saving checkpoints
         self.pth_checkpoints = setting["pth_checkpoints"]
 
+        ########################
+        # Create discriminator #
+        ########################
+
+        self.netD = Discriminator().to(self.device)
+        # Handle multi-GPU if desired
+        if(self.device.type == 'cuda') and (self.num_gpu > 1):
+            self.netG = nn.DataParallel(self.netG, list(range(self.num_gpu)))
+        # Apply the weights_init function to randomly initialize all weights
+        self.netD.apply(self._weights_init)
+        # Setup Adam optimizer
+        self.optimizerD = optim.Adam(self.netD.parameters(), lr=self.disc_learning_rate, betas=(self.beta1, 0.999))
+        
+        ####################
+        # Create generator #
+        ####################       
+
+        # Create the generator network
+        self.netG = Generator().to(self.device)
+        # Handle multi-GPU if desired
+        if (self.device.type == 'cuda') and (self.num_gpu > 1):
+            self.netG = nn.DataParallel(self.netG, list(range(self.num_gpu)))
+        # Apply the weights_init function to randomly initialize all weights
+        self.netG.apply(self._weights_init)        
+        self.optimizerG = optim.Adam(self.netG.parameters(), lr=self.gen_learning_rate, betas=(self.beta1, 0.999)) 
+
         # Initialize the BCEWithLogitsLoss function
         # Using this loss function doesn't require to define a sigmoid function
         # in the discriminator network as it is included
         self.criterion = nn.BCEWithLogitsLoss()
+        # Labels convention for real and fake data
+        self.real_label = 1.
+        self.fake_label = 0.
 
     #############################################################################################################
     # METHODS:
@@ -192,6 +221,59 @@ class Train():
             return torch.randn(batch_size, latent_vector_size, device=self.device)
         else:
             return False
+        
+    def _train_discriminator(self, data):
+
+        ## Train with all-real batch
+        self.netD.zero_grad()
+        # Format batch
+        real_cpu = data[0].to(self.device)
+        batch_size = real_cpu.size(0)
+        label = torch.full((batch_size,), self.real_label, dtype=torch.float, device=self.device)
+        # Forward pass real batch through D
+        output = self.netD(real_cpu).view(-1)
+        # Calculate loss on all-real batch
+        errD_real = self.criterion(output, label)
+        # Calculate gradients for D in backward pass
+        errD_real.backward()
+        D_x = output.mean().item()
+
+        ## Train with all-fake batch
+        # Generate batch of latent vectors
+        # noise = torch.randn(batch_size, self.latent_vector_size, 1, 1, device=self.device)
+        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+        # Generate fake image batch with G
+        fake = self.netG(noise)
+        label.fill_(self.fake_label)
+        # Classify all fake batch with D
+        output = self.netD(fake.detach()).view(-1)
+        # Calculate D's loss on the all-fake batch
+        errD_fake = self.criterion(output, label)
+        # Calculate the gradients for this batch, accumulated (summed) with previous gradients
+        errD_fake.backward()
+        D_G_z1 = output.mean().item()
+        # Compute error of D as sum over the fake and the real batches
+        errD = errD_real + errD_fake
+        # Update D
+        self.optimizerD.step()
+
+        return D_x, D_G_z1, errD, label, fake
+    
+    def _train_generator(self, label, fake):
+        self.netG.zero_grad()
+        label.fill_(self.real_label)  # fake labels are real for generator cost
+        # Since we just updated D, perform another forward pass of all-fake batch through D
+        output = self.netD(fake).view(-1)
+        # Calculate G's loss based on this output
+        errG = self.criterion(output, label)
+        # Calculate gradients for G
+        errG.backward()
+        D_G_z2 = output.mean().item()
+        # Update G
+        self.optimizerG.step()
+
+        return errG, D_G_z2
+
 
     #############################################################################################################
     # CALL:
@@ -201,7 +283,7 @@ class Train():
         #################
         # DISCRIMINATOR #
         #################
-
+        """
         # Create the discriminator network
         netD = Discriminator().to(self.device)
         # Handle multi-GPU if desired
@@ -227,14 +309,7 @@ class Train():
         ####################
         # LOSS / OPTIMIZER #
         ####################
-
-        # Establish convention for real and fake labels during training
-        real_label = 1.
-        fake_label = 0.
-
-        # Setup Adam optimizers for both G and D
-        optimizerD = optim.Adam(netD.parameters(), lr=self.disc_learning_rate, betas=(self.beta1, 0.999))
-        optimizerG = optim.Adam(netG.parameters(), lr=self.gen_learning_rate, betas=(self.beta1, 0.999)) 
+        """
 
         #######################
         # START TRAINING LOOP #
@@ -266,12 +341,15 @@ class Train():
                     # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z))) #
                     ###############################################################
 
+                    D_x, D_G_z1, errD, label, fake = self._train_discriminator(data)
+
+                    """
                     ## Train with all-real batch
                     netD.zero_grad()
                     # Format batch
                     real_cpu = data[0].to(self.device)
                     batch_size = real_cpu.size(0)
-                    label = torch.full((batch_size,), real_label, dtype=torch.float, device=self.device)
+                    label = torch.full((batch_size,), self.real_label, dtype=torch.float, device=self.device)
                     # Forward pass real batch through D
                     output = netD(real_cpu).view(-1)
                     # Calculate loss on all-real batch
@@ -286,7 +364,7 @@ class Train():
                     noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
                     # Generate fake image batch with G
                     fake = netG(noise)
-                    label.fill_(fake_label)
+                    label.fill_(self.fake_label)
                     # Classify all fake batch with D
                     output = netD(fake.detach()).view(-1)
                     # Calculate D's loss on the all-fake batch
@@ -298,13 +376,16 @@ class Train():
                     errD = errD_real + errD_fake
                     # Update D
                     optimizerD.step()
-
+                    """
                     ###############################################
                     # (2) Update G network: maximize log(D(G(z))) #
                     ###############################################
 
+                    errG, D_G_z2 = self._train_generator(label, fake)
+
+                    """
                     netG.zero_grad()
-                    label.fill_(real_label)  # fake labels are real for generator cost
+                    label.fill_(self.real_label)  # fake labels are real for generator cost
                     # Since we just updated D, perform another forward pass of all-fake batch through D
                     output = netD(fake).view(-1)
                     # Calculate G's loss based on this output
@@ -314,6 +395,7 @@ class Train():
                     D_G_z2 = output.mean().item()
                     # Update G
                     optimizerG.step()
+                    """
 
                 ######################
                 # SAVE TRAINING DATA #
@@ -325,7 +407,7 @@ class Train():
 
                 # Save checkpoints
                 if((epoch + 1) % self.generate_checkpoints_epochs == 0):
-                    self._save_weights(netG, (epoch + 1), self.pth_checkpoints)   
+                    self._save_weights(self.netG, (epoch + 1), self.pth_checkpoints)   
 
                 # Prints plot with generator and discriminator losses
                 if((epoch + 1) % self.generate_plot_epochs == 0):
