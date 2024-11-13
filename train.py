@@ -313,6 +313,7 @@ class Train():
                     noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
                     # Generate fake image batch with G
                     fake_images = self.netG(noise)
+                    print(fake_images.shape)
 
                     ###############################################################
                     # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z))) #
