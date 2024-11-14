@@ -1,5 +1,5 @@
 # Literature
-# - https://neptune.ai/blog/gan-failure-modes
+# - https://neptune.ai/blog/gan-failure-modes test
 
 import random
 import torch
