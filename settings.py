@@ -14,11 +14,11 @@ setting = {
 
     # Generator
     "gen_learning_rate": 0.0002,
-    "gen_dropout": 0.25,
+    "gen_dropout": 0.0,
 
     # Discriminator
     "disc_learning_rate": 0.0002,
-    "disc_dropout": 0.25,
+    "disc_dropout": 0.0,
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -34,8 +34,11 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,          # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 500,     # Save generator every x epochs in checkpoints folder
-    "generate_plot_epochs": 200,            # Save loss plot every x epochs
+    "generate_checkpoints_epochs": 1000,    # Save generator every x epochs in checkpoints folder
+    "generate_plot_epochs": 100,            # Save loss plot every x epochs
+
+    # Training generator several times per epoch
+    "max_gen_loss": 1.0,
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets

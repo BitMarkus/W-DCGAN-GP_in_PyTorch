@@ -94,6 +94,8 @@ class Train():
         self.pth_plots = setting["pth_plots"]
         # Path for saving checkpoints
         self.pth_checkpoints = setting["pth_checkpoints"]
+        # Training generator several times per epoch
+        self.max_gen_loss = setting["max_gen_loss"]
 
         ########################
         # Create discriminator #
@@ -225,7 +227,7 @@ class Train():
     def _train_discriminator(self, real_images, fake_images):
         # Get batch size
         batch_size = real_images.size(0)
-        print(batch_size)
+        
         # Train with all-real batch
         self.netD.zero_grad()
         # Generate labels
@@ -249,15 +251,16 @@ class Train():
         D_G_z1 = output.mean().item()
         # Compute error of D as sum over the fake and the real batches
         errD = errD_real + errD_fake
+        D_loss = errD.item()
         # Update D
         self.optimizerD.step()
 
-        return D_x, D_G_z1, errD
+        return D_x, D_G_z1, D_loss
     
     def _train_generator(self, fake_images):
         # Get batch size
         batch_size = fake_images.size(0)
-        print(batch_size)
+
         self.netG.zero_grad()
         # Generate labels
         label = torch.full((batch_size,), self.real_label, dtype=torch.float, device=self.device) # fake labels are real for generator cost
@@ -265,13 +268,14 @@ class Train():
         output = self.netD(fake_images).view(-1)
         # Calculate G's loss based on this output
         errG = self.criterion(output, label)
+        G_loss = errG.item()
         # Calculate gradients for G
         errG.backward()
         D_G_z2 = output.mean().item()
         # Update G
         self.optimizerG.step()
 
-        return errG, D_G_z2
+        return G_loss, D_G_z2
 
 
     #############################################################################################################
@@ -284,6 +288,7 @@ class Train():
         #######################
 
         # Based on: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
+        # and on: https://neptune.ai/blog/gan-failure-modes
 
         # Metrics for plot history:
         # - Loss_G: Generator loss calculated as log(D(G(z)))log(D(G(z)))   
@@ -305,27 +310,78 @@ class Train():
             with tqdm(self.dataloader, unit="batch") as tepoch:
                 for step, data in enumerate(tepoch, 0):
 
-                    # Get a batch of real images
-                    real_images = data[0].to(self.device)
-                    # Get batch size from actual batch (last batch can be smaller!)
-                    batch_size = real_images.size(0)
+                    ############################################
+                    # Generate batches of real and fake images #
+                    ############################################
+
+                    # If G_loss is < than 1.0, train generator and discriminator
+                    if( not history["G_loss"] or    # first iteration
+                        (history["G_loss"] and history["G_loss"][-1] <= self.max_gen_loss) ):
+
+                        print("\nTrain generator and discriminator...")
+
+                        # Get a batch of real images
+                        real_images = data[0].to(self.device)
+                        # Get batch size from actual batch (last batch can be smaller!)
+                        batch_size = real_images.size(0)
+                        # Generate batch of latent vectors
+                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+                        # Generate fake image batch with G
+                        fake_images = self.netG(noise)
+
+                        ###############################################################
+                        # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z))) #
+                        ###############################################################
+
+                        D_x, D_G_z1, D_loss = self._train_discriminator(real_images, fake_images)
+
+                        ###############################################
+                        # (2) Update G network: maximize log(D(G(z))) #
+                        ###############################################
+
+                        G_loss, D_G_z2 = self._train_generator(fake_images)
+
+                    # If G_loss is > than 1.0, train only the generator
+                    else:
+
+                        print("\nTrain generator only...")
+
+                        # Keep last discriminator values for history
+                        D_x = history["D_x"][-1]
+                        D_G_z1 = history["D_G_z1"][-1]
+                        D_loss = history["D_loss"][-1]
+
+                        ###############################################
+                        # (2) Update G network: maximize log(D(G(z))) #
+                        ###############################################
+
+                        # Generate batch of latent vectors
+                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+                        # Generate fake image batch with G
+                        fake_images = self.netG(noise)
+                        # Train generator
+                        G_loss, D_G_z2 = self._train_generator(fake_images)
+
+
+                    """
+                    ################################################################################################################
+                    # TEST: Train Generator 3x more often than the discriminator
+                    # on NEW FAKE IMAGES!
                     # Generate batch of latent vectors
                     noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
                     # Generate fake image batch with G
                     fake_images = self.netG(noise)
-                    print(fake_images.shape)
-
-                    ###############################################################
-                    # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z))) #
-                    ###############################################################
-
-                    D_x, D_G_z1, errD = self._train_discriminator(real_images, fake_images)
-
-                    ###############################################
-                    # (2) Update G network: maximize log(D(G(z))) #
-                    ###############################################
-
+                    # Train generator
                     errG, D_G_z2 = self._train_generator(fake_images)
+
+                    # Generate batch of latent vectors
+                    noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+                    # Generate fake image batch with G
+                    fake_images = self.netG(noise)
+                    # Train generator
+                    errG, D_G_z2 = self._train_generator(fake_images)
+                    ################################################################################################################
+                    """
 
                 ######################
                 # SAVE TRAINING DATA #
@@ -356,10 +412,10 @@ class Train():
             history["D_x"].append(D_x)
             history["D_G_z1"].append(D_G_z1)
             history["D_G_z2"].append(D_G_z2)
-            history["G_loss"].append(errG.item())
-            history["D_loss"].append(errD.item())
+            history["G_loss"].append(G_loss)
+            history["D_loss"].append(D_loss)
                     
             # Print history
-            print(f'Loss_D: {errD.item():.4f}, Loss_G: {errG.item():.4f}, D(x): {D_x:.4f}, D(G(z)): {D_G_z1:.4f} / {D_G_z2:.4f}')
+            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, D(x): {D_x:.4f}, D(G(z)): {D_G_z1:.4f} / {D_G_z2:.4f}')
 
         print("Training finished!")
