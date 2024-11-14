@@ -38,7 +38,9 @@ setting = {
     "generate_plot_epochs": 100,            # Save loss plot every x epochs
 
     # Training generator several times per epoch
-    "max_gen_loss": 1.0,
+    "max_gen_loss_1": 1.0,
+    "max_gen_loss_2": 1.5,
+    "max_gen_loss_3": 2.0,
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
