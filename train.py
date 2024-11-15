@@ -37,19 +37,12 @@ import torch.optim as optim
 from torchvision.utils import make_grid
 from datetime import datetime
 from tqdm import tqdm
-
 # https://stackoverflow.com/questions/52839758/matplotlib-and-runtimeerror-main-thread-is-not-in-main-loop
 # https://stackoverflow.com/questions/66541812/kochat-in-use-runtimeerror-main-thread-is-not-in-main-loop
 # https://stackoverflow.com/questions/27147300/matplotlib-tcl-asyncdelete-async-handler-deleted-by-the-wrong-thread
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-"""
-# Or try:
-import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-"""
-
 # Own modules
 from settings import setting
 from generator import Generator
@@ -98,6 +91,7 @@ class Train():
         self.max_gen_loss_1 = setting["max_gen_loss_1"]
         self.max_gen_loss_2 = setting["max_gen_loss_2"]
         self.max_gen_loss_3 = setting["max_gen_loss_3"]
+        self.max_gen_loss_4 = setting["max_gen_loss_4"]
 
         ########################
         # Create discriminator #
@@ -278,12 +272,22 @@ class Train():
         self.optimizerG.step()
 
         return G_loss, D_G_z2
+    
+    def _train_generator_block(self, batch_size):
+        # Generate batch of latent vectors
+        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+        # Generate fake image batch with G
+        fake_images = self.netG(noise)
+        # Train generator
+        G_loss, D_G_z2 = self._train_generator(fake_images)
+
+        return G_loss, D_G_z2
 
 
     #############################################################################################################
-    # CALL:
+    # TRAINING LOOP:
 
-    def __call__(self):
+    def train(self):
 
         #######################
         # START TRAINING LOOP #
@@ -341,57 +345,28 @@ class Train():
                     # Train Generator again #
                     #########################
 
-                    # If G_loss is > than 1.0, train generator again
+                    # Always second repeat                  -> Train generator 2x
+                    G_loss, D_G_z2 = self._train_generator_block(batch_size)
+
+                    # If G_loss is between 1.0 and 1.5      -> Train generator 3x
                     if(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_1) and (history["G_loss"][-1] < self.max_gen_loss_2)):
-                        # TRAIN GEN 1x MORE:
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
-
+                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
+                    # If G_loss is between 1.5 and 2.0      -> Train generator 4x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_2) and (history["G_loss"][-1] < self.max_gen_loss_3)):
-                        # TRAIN GEN 2x MORE:
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
+                        self._train_generator_block(batch_size)
+                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
+                    # If G_loss is between 2.0 and 2.5      -> Train generator 5x
+                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_3) and (history["G_loss"][-1] < self.max_gen_loss_4)):
+                        self._train_generator_block(batch_size)
+                        self._train_generator_block(batch_size)
+                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
+                    # If G_loss is bigger than 2.5          -> Train generator 6x
+                    elif(history["G_loss"] and history["G_loss"][-1] >= self.max_gen_loss_4):
+                        self._train_generator_block(batch_size)
+                        self._train_generator_block(batch_size)
+                        self._train_generator_block(batch_size)
+                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
 
-                    elif(history["G_loss"] and history["G_loss"][-1] >= self.max_gen_loss_3):
-                        # TRAIN GEN 4x MORE:
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
-                        # Generate batch of latent vectors
-                        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
-                        # Generate fake image batch with G
-                        fake_images = self.netG(noise)
-                        # Train generator
-                        G_loss, D_G_z2 = self._train_generator(fake_images)
 
                     """
                     # If G_loss is < than 1.0, train generator and discriminator

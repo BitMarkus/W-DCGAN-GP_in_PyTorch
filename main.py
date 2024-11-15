@@ -1,5 +1,5 @@
 # Literature
-# - https://neptune.ai/blog/gan-failure-modes test
+# - https://neptune.ai/blog/gan-failure-modes
 
 import random
 import torch
@@ -37,8 +37,15 @@ def main():
     dataloader = ds.load_training_dataset()
 
     # Train on dataset
-    train_object = Train(device, dataloader)
-    train_object()
+    train = Train(device, dataloader)
+
+    # Number of trainable parameters for generator and discriminator
+    print("\nNumber of parameters for discriminator:")
+    fn.count_parameters(train.netD)
+    print("\nNumber of parameters for generator:")
+    fn.count_parameters(train.netG)
+
+    # train.train()
 
 if __name__ == "__main__":
     main()

@@ -41,6 +41,7 @@ setting = {
     "max_gen_loss_1": 1.0,
     "max_gen_loss_2": 1.5,
     "max_gen_loss_3": 2.0,
+    "max_gen_loss_4": 2.5,
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
