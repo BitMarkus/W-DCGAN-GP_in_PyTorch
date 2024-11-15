@@ -25,9 +25,9 @@ class Generator(nn.Module):
         self.lrelu_alpha = setting["lrelu_alpha"]
 
         # Entry into the network
-        self.in_block = self._in_block(self.latent_vector_size, 8*8*256)
+        self.in_block = self._in_block(self.latent_vector_size, 8*8*512)
         # Define deconvolutional blocks
-        self.deconv_block_1 = self._generator_block(256, 256)
+        self.deconv_block_1 = self._generator_block(512, 256)
         self.deconv_block_2 = self._generator_block(256, 256)
         self.deconv_block_3 = self._generator_block(256, 128)
         self.deconv_block_4 = self._generator_block(128, 128)
@@ -84,15 +84,15 @@ class Generator(nn.Module):
 
         # Input block: 
         x = self.in_block(x)
-        # [batch_size, 8*8*256]
+        # [batch_size, 8*8*512]
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 8*8*256)       
+                x.shape[1] == 8*8*512)       
 
-        # Reshape 8*8*256 to [batch_size, 256, 8, 8]
-        x = x.view(-1, 256, 8, 8)
-        # [batch_size, 256, 8, 8]
+        # Reshape 8*8*512 to [batch_size, 512, 8, 8]
+        x = x.view(-1, 512, 8, 8)
+        # [batch_size, 512, 8, 8]
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 256 and
+                x.shape[1] == 512 and
                 x.shape[2] == 8 and
                 x.shape[3] == 8)     
 

@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 16,                 
+    "batch_size": 32,                 
     "num_epochs": 5000,              
 
     # Generator
@@ -28,7 +28,7 @@ setting = {
     # Misc
     "opt_beta_1": 0.5,                      # Beta 1 parameter for ADAM optimizer, Default for GAN: 0.5
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
-    "latent_vector_size": 2048,             # Size of z latent vector (i.e. size of generator input)
+    "latent_vector_size": 512,             # Size of z latent vector (i.e. size of generator input)
 
     # Sample and plot generation
     "generate_samples": True,
