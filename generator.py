@@ -25,15 +25,15 @@ class Generator(nn.Module):
         self.lrelu_alpha = setting["lrelu_alpha"]
 
         # Entry into the network
-        self.in_block = self._in_block(self.latent_vector_size, 8*8*1024)
+        self.in_block = self._in_block(self.latent_vector_size, 8*8*256)
         # Define deconvolutional blocks
-        self.deconv_block_1 = self._generator_block(1024, 512)
-        self.deconv_block_2 = self._generator_block(512, 512)
-        self.deconv_block_3 = self._generator_block(512, 256)
-        self.deconv_block_4 = self._generator_block(256, 256)
-        self.deconv_block_5 = self._generator_block(256, 128)
+        self.deconv_block_1 = self._generator_block(256, 256)
+        self.deconv_block_2 = self._generator_block(256, 256)
+        self.deconv_block_3 = self._generator_block(256, 128)
+        self.deconv_block_4 = self._generator_block(128, 128)
+        self.deconv_block_5 = self._generator_block(128, 64)
         # Exit out of the network
-        self.out_block = self._out_block(128, self.image_channels)
+        self.out_block = self._out_block(64, self.image_channels)
 
     #############################################################################################################
     # METHODS:
@@ -78,21 +78,21 @@ class Generator(nn.Module):
 
     def forward(self, x):
         # print(x.shape)
-        # Input noise vector: [32, self.latent_vector_size]
+        # Input noise vector: [batch_size, self.latent_vector_size]
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.latent_vector_size)
 
         # Input block: 
         x = self.in_block(x)
-        # [batch_size, 65536]
+        # [batch_size, 8*8*256]
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 8*8*1024)       
+                x.shape[1] == 8*8*256)       
 
-        # Reshape 65536 to 1024x8x8
-        x = x.view(-1, 1024, 8, 8)
-        # [batch_size, 1024, 8, 8]
+        # Reshape 8*8*256 to [batch_size, 256, 8, 8]
+        x = x.view(-1, 256, 8, 8)
+        # [batch_size, 256, 8, 8]
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 1024 and
+                x.shape[1] == 256 and
                 x.shape[2] == 8 and
                 x.shape[3] == 8)     
 
@@ -100,31 +100,31 @@ class Generator(nn.Module):
         # 8x8 -> 16x16 
         x = self.deconv_block_1(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 512 and
+                x.shape[1] == 256 and
                 x.shape[2] == 16 and
                 x.shape[3] == 16)    
         # 16x16 -> 32x32 
         x = self.deconv_block_2(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 512 and
+                x.shape[1] == 256 and
                 x.shape[2] == 32 and
                 x.shape[3] == 32)    
         # 32x32 -> 64x64
         x = self.deconv_block_3(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 256 and
+                x.shape[1] == 128 and
                 x.shape[2] == 64 and
                 x.shape[3] == 64)    
         # 64x64 -> 128x128
         x = self.deconv_block_4(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 256 and
+                x.shape[1] == 128 and
                 x.shape[2] == 128 and
                 x.shape[3] == 128)    
         # 128x128 -> 256x256
         x = self.deconv_block_5(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 128 and
+                x.shape[1] == 64 and
                 x.shape[2] == 256 and
                 x.shape[3] == 256)   
         

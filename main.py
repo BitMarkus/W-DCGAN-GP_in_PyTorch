@@ -45,7 +45,8 @@ def main():
     print("\nNumber of parameters for generator:")
     fn.count_parameters(train.netG)
 
-    # train.train()
+    # Train on dataset
+    train.train()
 
 if __name__ == "__main__":
     main()
