@@ -9,8 +9,8 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 32,                 
-    "num_epochs": 5000,              
+    "batch_size": 16,                 
+    "num_epochs": 1000,              
 
     # Generator
     "gen_learning_rate": 0.0002,
@@ -28,13 +28,13 @@ setting = {
     # Misc
     "opt_beta_1": 0.5,                      # Beta 1 parameter for ADAM optimizer, Default for GAN: 0.5
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
-    "latent_vector_size": 512,             # Size of z latent vector (i.e. size of generator input)
+    "latent_vector_size": 1024,             # Size of z latent vector (i.e. size of generator input)
 
     # Sample and plot generation
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,          # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 1000,    # Save generator every x epochs in checkpoints folder
+    "generate_checkpoints_epochs": 500,     # Save generator every x epochs in checkpoints folder
     "generate_plot_epochs": 100,            # Save loss plot every x epochs
 
     # Training generator several times per epoch

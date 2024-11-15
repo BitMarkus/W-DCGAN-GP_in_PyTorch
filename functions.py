@@ -32,6 +32,7 @@ def create_prg_folders():
 
 # Function to get a table of all tarinable parameters in a model and the total number
 # https://stackoverflow.com/questions/49201236/check-the-total-number-of-parameters-in-a-pytorch-model
+# Requires PrettyTable module
 def count_parameters(model):
     table = PrettyTable(["Modules", "Parameters"])
     total_params = 0
