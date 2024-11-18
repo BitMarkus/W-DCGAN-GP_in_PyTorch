@@ -45,3 +45,20 @@ def count_parameters(model):
     print(table)
     print(f"Total Trainable Params: {total_params}")
     return total_params
+
+# Check variable for int
+# Returns True if conversion was successful
+# or False when the variable cannot be converted to an integer number
+def check_int(var):
+    try:
+        val = int(var)
+        return True
+    except ValueError:
+        return False
+    
+# Checks if int parameters are within a certain range
+def check_int_range(var, min, max):
+    if(var >= min and var <= max):
+        return True
+    else:
+        return False

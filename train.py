@@ -282,6 +282,14 @@ class Train():
         G_loss, D_G_z2 = self._train_generator(fake_images)
 
         return G_loss, D_G_z2
+    
+    def create_generator_samples(self, num_samples):
+        # Generate batch of latent vectors
+        noise = self._create_noise(num_samples, self.latent_vector_size, shape="2D")
+        # Generate fake image batch with G
+        samples_tensors = self.netG(noise)
+
+        return samples_tensors
 
 
     #############################################################################################################

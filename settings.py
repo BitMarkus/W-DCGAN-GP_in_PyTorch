@@ -10,15 +10,15 @@ setting = {
  
     # Hyperparameter
     "batch_size": 16,                 
-    "num_epochs": 1000,              
+    "num_epochs": 2000,              
 
     # Generator
     "gen_learning_rate": 0.0002,
-    "gen_dropout": 0.0,
+    "gen_dropout": 0.2,
 
     # Discriminator
     "disc_learning_rate": 0.0002,
-    "disc_dropout": 0.0,
+    "disc_dropout": 0.2,
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -34,7 +34,7 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,          # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 500,     # Save generator every x epochs in checkpoints folder
+    "generate_checkpoints_epochs": 50,     # Save generator every x epochs in checkpoints folder
     "generate_plot_epochs": 100,            # Save loss plot every x epochs
 
     # Training generator several times per epoch

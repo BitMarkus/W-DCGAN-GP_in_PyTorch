@@ -10,6 +10,7 @@ from settings import setting
 from dataset import Dataset
 import functions as fn
 from train import Train
+from generate import Generate
 
 ########
 # MAIN #
@@ -23,6 +24,10 @@ def main():
     # Create program folders if they don't exist already
     fn.create_prg_folders()
 
+    ###############
+    # Random Seed #
+    ###############
+
     # Set random seed for reproducibility
     # manualSeed = 369
     manualSeed = random.randint(1, 10000)
@@ -32,21 +37,36 @@ def main():
     # Needed for reproducible results -> doesn't work with my modified training loop
     # torch.use_deterministic_algorithms(True) 
 
+    ################
+    # Load Dataset #
+    ################
+
     # Create a dataset object and load training images
     ds = Dataset()
     dataloader = ds.load_training_dataset()
 
+    ######################
+    # Networks and Train #
+    ######################
+
     # Train on dataset
     train = Train(device, dataloader)
-
     # Number of trainable parameters for generator and discriminator
     print("\nNumber of parameters for discriminator:")
     fn.count_parameters(train.netD)
     print("\nNumber of parameters for generator:")
     fn.count_parameters(train.netG)
-
     # Train on dataset
-    train.train()
+    # train.train()
+
+    ############################
+    # Create Generator Samples #
+    ############################
+
+    # Create a generate object
+    samples = Generate(train)
+    samples(device)
+
 
 if __name__ == "__main__":
     main()

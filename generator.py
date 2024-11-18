@@ -3,6 +3,7 @@
 #############
 
 from torch import nn
+import torch
 # Own modules
 from settings import setting
 
@@ -79,60 +80,51 @@ class Generator(nn.Module):
     def forward(self, x):
         # print(x.shape)
         # Input noise vector: [batch_size, self.latent_vector_size]
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == self.latent_vector_size)
+        assert (x.shape[1] == self.latent_vector_size)
 
-        # Input block: 
+        # Input block:
         x = self.in_block(x)
         # [batch_size, 8*8*512]
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 8*8*512)       
+        assert (x.shape[1] == 8*8*512)       
 
         # Reshape 8*8*512 to [batch_size, 512, 8, 8]
         x = x.view(-1, 512, 8, 8)
         # [batch_size, 512, 8, 8]
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 512 and
+        assert (x.shape[1] == 512 and
                 x.shape[2] == 8 and
                 x.shape[3] == 8)     
 
         # Convolutional upscaling:
         # 8x8 -> 16x16 
         x = self.deconv_block_1(x)
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 256 and
+        assert (x.shape[1] == 256 and
                 x.shape[2] == 16 and
                 x.shape[3] == 16)    
         # 16x16 -> 32x32 
         x = self.deconv_block_2(x)
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 256 and
+        assert (x.shape[1] == 256 and
                 x.shape[2] == 32 and
                 x.shape[3] == 32)    
         # 32x32 -> 64x64
         x = self.deconv_block_3(x)
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 128 and
+        assert (x.shape[1] == 128 and
                 x.shape[2] == 64 and
                 x.shape[3] == 64)    
         # 64x64 -> 128x128
         x = self.deconv_block_4(x)
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 128 and
+        assert (x.shape[1] == 128 and
                 x.shape[2] == 128 and
                 x.shape[3] == 128)    
         # 128x128 -> 256x256
         x = self.deconv_block_5(x)
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 64 and
+        assert (x.shape[1] == 64 and
                 x.shape[2] == 256 and
                 x.shape[3] == 256)   
         
         # Output block:
         # 256x256 -> 512x512
         x = self.out_block(x)
-        assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 1 and
+        assert (x.shape[1] == 1 and
                 x.shape[2] == 512 and
                 x.shape[3] == 512)   
 
