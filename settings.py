@@ -14,11 +14,11 @@ setting = {
 
     # Generator
     "gen_learning_rate": 0.0002,
-    "gen_dropout": 0.2,
+    "gen_dropout": 0.0,
 
     # Discriminator
     "disc_learning_rate": 0.0002,
-    "disc_dropout": 0.2,
+    "disc_dropout": 0.0,
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -38,10 +38,16 @@ setting = {
     "generate_plot_epochs": 100,            # Save loss plot every x epochs
 
     # Training generator several times per epoch
-    "max_gen_loss_1": 1.0,
-    "max_gen_loss_2": 1.5,
-    "max_gen_loss_3": 2.0,
-    "max_gen_loss_4": 2.5,
+    "max_gen_loss_1": 0.8,
+    "max_gen_loss_2": 1.0,
+    "max_gen_loss_3": 1.3,
+    "max_gen_loss_4": 1.6,
+    "max_gen_loss_5": 2.0,
+    "max_gen_loss_6": 2.5,
+    "max_gen_loss_7": 3.0,
+    "max_gen_loss_8": 3.5,
+    "max_gen_loss_9": 4.0,
+
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets

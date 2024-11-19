@@ -58,7 +58,7 @@ class Generate():
                 if not(fn.check_int_range(nr, 1, max_id)):
                     print("Index out of range! Try again...")
                 else:
-                    return checkpoints[nr-1][1] 
+                        return checkpoints[nr-1][1] 
                 
     # Load a generator checkpoint/weights
     def load_checkpoint(self, model, chckpt_name, device):
@@ -110,16 +110,20 @@ class Generate():
     def __call__(self, device):
         # Print a table with index for all checkpoints in the checkpoints folder
         checkpoints = self.print_checkpoints_table()
-        # Select a checkpoint by index
-        checkpoint_name = self.select_checkpoint(checkpoints, "Select a checkpoint: ")
-        # Load weights into the generator network
-        self.load_checkpoint(self.train.netG, checkpoint_name, device)
-        # Select a number of generated sample images
-        num_samples = self.select_num_samples("Choose a number of sample images: ")
-        # Get image tensors
-        samples_tensors = self.train.create_generator_samples(num_samples)
-        # Plot and save all images as image single files (PIL Image)
-        self.save_sample_images(samples_tensors, setting["img_channels"])        
-        print(f"{num_samples} sample images were successfully created and saved to folder {self.pth_samples}.")   
-        return True     
+        # If list is not empty
+        if(checkpoints):
+            # Select a checkpoint by index
+            checkpoint_name = self.select_checkpoint(checkpoints, "Select a checkpoint: ")
+            # Load weights into the generator network
+            self.load_checkpoint(self.train.netG, checkpoint_name, device)
+            # Select a number of generated sample images
+            num_samples = self.select_num_samples("Choose a number of sample images: ")
+            # Get image tensors
+            samples_tensors = self.train.create_generator_samples(num_samples)
+            # Plot and save all images as image single files (PIL Image)
+            self.save_sample_images(samples_tensors, setting["img_channels"])        
+            print(f"{num_samples} sample images were successfully created and saved to folder {self.pth_samples}.")   
+            return True
+        else:
+            print("The checkpoint folder is empty!")     
 
