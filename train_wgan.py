@@ -1,10 +1,9 @@
 # Source for W-GAN: https://agustinus.kristia.de/blog/wasserstein-gan/   
+# https://machinelearningmastery.com/how-to-implement-wasserstein-loss-for-generative-adversarial-networks/
 
 import torch
 import torch.optim as optim
 # https://stackoverflow.com/questions/52839758/matplotlib-and-runtimeerror-main-thread-is-not-in-main-loop
-# https://stackoverflow.com/questions/66541812/kochat-in-use-runtimeerror-main-thread-is-not-in-main-loop
-# https://stackoverflow.com/questions/27147300/matplotlib-tcl-asyncdelete-async-handler-deleted-by-the-wrong-thread
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -129,7 +128,7 @@ class Train_WGAN(Train):
                     # Train Discriminator #
                     #######################
 
-                    # Discriminator is supposed to be trained 5x more that the generator in WGAN
+                    # Discriminator is supposed to be trained at least 5x more that the generator in WGAN
                     # This might not be the case here, as the generator network is about 9x bigger
                     # than the discriminator network and thus needs more training
 
