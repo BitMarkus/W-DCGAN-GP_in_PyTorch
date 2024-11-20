@@ -10,6 +10,7 @@ from settings import setting
 from dataset import Dataset
 import functions as fn
 from train import Train
+from train_wgan import Train_WGAN
 from generate import Generate
 
 ########
@@ -50,14 +51,14 @@ def main():
     ######################
 
     # Train on dataset
-    train = Train(device, dataloader)
+    train = Train_WGAN(device, dataloader)
     # Number of trainable parameters for generator and discriminator
     print("\nNumber of parameters for discriminator:")
     fn.count_parameters(train.netD)
     print("\nNumber of parameters for generator:")
     fn.count_parameters(train.netG)
     # Train on dataset
-    # train.train()
+    train.train()
 
     ############################
     # Create Generator Samples #
@@ -65,7 +66,7 @@ def main():
 
     # Create a generate object
     samples = Generate(train)
-    samples(device)
+    # samples(device)
 
 
 if __name__ == "__main__":

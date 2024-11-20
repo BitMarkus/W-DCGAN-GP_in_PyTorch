@@ -13,11 +13,11 @@ setting = {
     "num_epochs": 2000,              
 
     # Generator
-    "gen_learning_rate": 0.0002,
+    "gen_learning_rate": 0.00005,            # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
     "gen_dropout": 0.0,
 
     # Discriminator
-    "disc_learning_rate": 0.0002,
+    "disc_learning_rate": 0.00005,           # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
     "disc_dropout": 0.0,
 
     # Input/output dims
@@ -34,7 +34,7 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,          # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 50,     # Save generator every x epochs in checkpoints folder
+    "generate_checkpoints_epochs": 100,     # Save generator every x epochs in checkpoints folder
     "generate_plot_epochs": 100,            # Save loss plot every x epochs
 
     # Training generator several times per epoch
