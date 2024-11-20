@@ -68,7 +68,8 @@ class Discriminator(nn.Module):
             ):
             return nn.Sequential(
                 nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
-                nn.BatchNorm2d(out_channels),
+                # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+                # nn.BatchNorm2d(out_channels),
                 nn.LeakyReLU(self.lrelu_alpha, inplace=True),
                 nn.Dropout2d(self.disc_dropout)
                 ) 
@@ -82,7 +83,8 @@ class Discriminator(nn.Module):
             # Global average pooling: 8 as the size of the last feature maps is 8x8 
             nn.AvgPool2d(pool_size),
             # No activation function here!
-            # nn.BCEWithLogitsLoss is a cross entropy loss that comes inside a sigmoid function
+            # Vanilla GAN: nn.BCEWithLogitsLoss is a cross entropy loss that comes inside a sigmoid function
+            # W-GAN: no activation function is needed at all here
         )  
     
     #############################################################################################################

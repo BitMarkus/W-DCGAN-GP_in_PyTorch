@@ -3,6 +3,8 @@
 
 import torch
 import torch.optim as optim
+from torch.autograd import Variable
+from torch.autograd import grad
 # https://stackoverflow.com/questions/52839758/matplotlib-and-runtimeerror-main-thread-is-not-in-main-loop
 import matplotlib
 matplotlib.use('Agg')
@@ -19,6 +21,12 @@ class Train_WGAN(Train):
 
     def __init__(self, device, dataloader):
         super().__init__(device, dataloader)
+
+        # Training discriminator more that generator
+        self.num_disc_training = setting["num_disc_training"]
+
+        # Gradient penalty -> to settings once it works!!!
+        self.gp_weight = 10
 
         # W-GAN specific optimizers   
         self.optimizerD = optim.RMSprop(self.netD.parameters(), lr=self.disc_learning_rate)
@@ -54,7 +62,71 @@ class Train_WGAN(Train):
         if(show_plot):
             plt.show() 
 
-    def _train_discriminator(self, real_images, fake_images):
+    # Function for gradient clipping
+    # Source: https://antixk.github.io/blog/lipschitz-wgan/
+    def _gradient_clipping(self, netD, clip_val=0.01):
+        for p in netD.parameters():
+            p.data.clamp_(-clip_val, clip_val)
+
+    # Function for gradient penalty 1
+    # Source: https://towardsdatascience.com/demystified-wasserstein-gan-with-gradient-penalty-ba5e9b905ead
+    def _compute_gradient_penalty_1(self, real_data, fake_data):
+            batch_size = real_data.size(0)
+            # Sample Epsilon from uniform distribution
+            eps = torch.rand(batch_size, 1, 1, 1).to(real_data.device)
+            eps = eps.expand_as(real_data)
+            # Interpolation between real data and fake data.
+            interpolation = eps * real_data + (1 - eps) * fake_data
+            # get logits for interpolated images
+            interp_logits = self.netD(interpolation)
+            grad_outputs = torch.ones_like(interp_logits)
+            # Compute Gradients
+            gradients = grad(
+                outputs=interp_logits,
+                inputs=interpolation,
+                grad_outputs=grad_outputs,
+                create_graph=True,
+                retain_graph=True,
+            )[0]
+            # Compute and return Gradient Norm
+            gradients = gradients.view(batch_size, -1)
+            grad_norm = gradients.norm(2, 1)
+            grad_norm = torch.mean((grad_norm - 1) ** 2)
+
+            return grad_norm
+    
+    # Function for gradient penalty 2
+    # Source: https://github.com/EmilienDupont/wgan-gp/blob/master/training.py
+    def _compute_gradient_penalty_2(self, real_data, fake_data):
+        batch_size = real_data.size()[0]
+        # Calculate interpolation
+        alpha = torch.rand(batch_size, 1, 1, 1)
+        alpha = alpha.expand_as(real_data)
+        if(self.device.type == 'cuda'):
+            alpha = alpha.cuda()
+        interpolated = alpha * real_data.data + (1 - alpha) * fake_data.data
+        interpolated = Variable(interpolated, requires_grad=True)
+        if(self.device.type == 'cuda'):
+            interpolated = interpolated.cuda()
+        # Calculate probability of interpolated examples
+        prob_interpolated = self.netD(interpolated)
+        # Calculate gradients of probabilities with respect to examples
+        gradients = grad(outputs=prob_interpolated, inputs=interpolated,
+                            grad_outputs=torch.ones(prob_interpolated.size()).cuda() if self.device.type == 'cuda' else torch.ones(
+                            prob_interpolated.size()),
+                            create_graph=True, retain_graph=True)[0]
+        # Gradients have shape (batch_size, num_channels, img_width, img_height),
+        # so flatten to easily take norm per example in batch
+        gradients = gradients.view(batch_size, -1)
+        # Derivatives of the gradient close to 0 can cause problems because of
+        # the square root, so manually calculate norm and add epsilon
+        gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
+        # Calculate gradient penalty
+        gradient_penalty = self.gp_weight * ((gradients_norm - 1) ** 2).mean()
+
+        return gradient_penalty
+
+    def _train_discriminator_grad_clip(self, real_images, fake_images):
         # Reset gradients
         self.netD.zero_grad()
         # Send real and fake batch through discriminator
@@ -67,8 +139,23 @@ class Train_WGAN(Train):
         # Update G
         self.optimizerD.step()
         # Weight clipping -> WGAN specific
-        for p in self.netD.parameters():
-            p.data.clamp_(-0.01, 0.01)       
+        self._gradient_clipping(self.netD)   
+
+        return D_loss.item()
+    
+    def _train_discriminator_grad_pen(self, real_images, fake_images):
+        # Reset gradients
+        self.netD.zero_grad()
+        # Send real and fake batch through discriminator
+        D_real = self.netD(real_images)
+        D_fake = self.netD(fake_images.detach())
+        # Claculate gradient penalty -> WGAN specific
+        gradient_penalty = self._compute_gradient_penalty_2(real_images, fake_images)
+        # Calculate Wasserstein loss
+        D_loss = torch.mean(D_fake) - torch.mean(D_real) + gradient_penalty
+        D_loss.backward()
+        # Update G
+        self.optimizerD.step()
 
         return D_loss.item()
 
@@ -131,8 +218,9 @@ class Train_WGAN(Train):
                     # Discriminator is supposed to be trained at least 5x more that the generator in WGAN
                     # This might not be the case here, as the generator network is about 9x bigger
                     # than the discriminator network and thus needs more training
-
-                    D_loss = self._train_discriminator(real_images, fake_images)
+                    # TEST:
+                    for _ in range(self.num_disc_training):
+                        D_loss = self._train_discriminator_grad_pen(real_images, fake_images)
 
                     ###################
                     # Train Generator #

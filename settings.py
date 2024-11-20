@@ -48,6 +48,10 @@ setting = {
     "max_gen_loss_8": 3.5,
     "max_gen_loss_9": 4.0,
 
+    # WGAN
+    # Training discriminator more that generator
+    "num_disc_training": 5,
+
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
