@@ -45,8 +45,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # Own modules
 from settings import setting
-from generator import Generator
-from discriminator import Discriminator
+# from generator import Generator
+# from discriminator import Discriminator
+from discriminator_dc import Discriminator
+from generator_dc import Generator
 
 class Train():
 

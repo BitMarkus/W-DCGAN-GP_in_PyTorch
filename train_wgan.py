@@ -67,37 +67,10 @@ class Train_WGAN(Train):
     def _gradient_clipping(self, netD, clip_val=0.01):
         for p in netD.parameters():
             p.data.clamp_(-clip_val, clip_val)
-
-    # Function for gradient penalty 1
-    # Source: https://towardsdatascience.com/demystified-wasserstein-gan-with-gradient-penalty-ba5e9b905ead
-    def _compute_gradient_penalty_1(self, real_data, fake_data):
-            batch_size = real_data.size(0)
-            # Sample Epsilon from uniform distribution
-            eps = torch.rand(batch_size, 1, 1, 1).to(real_data.device)
-            eps = eps.expand_as(real_data)
-            # Interpolation between real data and fake data.
-            interpolation = eps * real_data + (1 - eps) * fake_data
-            # get logits for interpolated images
-            interp_logits = self.netD(interpolation)
-            grad_outputs = torch.ones_like(interp_logits)
-            # Compute Gradients
-            gradients = grad(
-                outputs=interp_logits,
-                inputs=interpolation,
-                grad_outputs=grad_outputs,
-                create_graph=True,
-                retain_graph=True,
-            )[0]
-            # Compute and return Gradient Norm
-            gradients = gradients.view(batch_size, -1)
-            grad_norm = gradients.norm(2, 1)
-            grad_norm = torch.mean((grad_norm - 1) ** 2)
-
-            return grad_norm
     
     # Function for gradient penalty 2
     # Source: https://github.com/EmilienDupont/wgan-gp/blob/master/training.py
-    def _compute_gradient_penalty_2(self, real_data, fake_data):
+    def _compute_gradient_penalty(self, real_data, fake_data):
         batch_size = real_data.size()[0]
         # Calculate interpolation
         alpha = torch.rand(batch_size, 1, 1, 1)
@@ -150,7 +123,7 @@ class Train_WGAN(Train):
         D_real = self.netD(real_images)
         D_fake = self.netD(fake_images.detach())
         # Claculate gradient penalty -> WGAN specific
-        gradient_penalty = self._compute_gradient_penalty_2(real_images, fake_images)
+        gradient_penalty = self._compute_gradient_penalty(real_images, fake_images)
         # Calculate Wasserstein loss
         D_loss = torch.mean(D_fake) - torch.mean(D_real) + gradient_penalty
         D_loss.backward()
@@ -172,6 +145,14 @@ class Train_WGAN(Train):
         self.optimizerG.step()
 
         return G_loss.item() 
+    
+    def create_generator_samples(self, num_samples):
+        # Generate batch of latent vectors
+        noise = self._create_noise(num_samples, self.latent_vector_size, shape="4D")
+        # Generate fake image batch with G
+        samples_tensors = self.netG(noise)
+
+        return samples_tensors
     
     #############################################################################################################
     # TRAINING LOOP:
