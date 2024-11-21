@@ -10,7 +10,7 @@ setting = {
  
     # Hyperparameter
     "batch_size": 64,                 
-    "num_epochs": 100,              
+    "num_epochs": 2000,              
 
     # Generator
     "gen_learning_rate": 0.00005,            # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
@@ -28,14 +28,14 @@ setting = {
     # Misc
     "opt_beta_1": 0.5,                      # Beta 1 parameter for ADAM optimizer, Default for GAN: 0.5
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
-    "latent_vector_size": 512,             # Size of z latent vector (i.e. size of generator input)
+    "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
 
     # Sample and plot generation
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,          # Save sample images every x epochs in samples folder
     "generate_checkpoints_epochs": 100,     # Save generator every x epochs in checkpoints folder
-    "generate_plot_epochs": 10,            # Save loss plot every x epochs
+    "generate_plot_epochs": 50,             # Save loss plot every x epochs
 
     # Training generator several times per epoch
     "max_gen_loss_1": 0.8,

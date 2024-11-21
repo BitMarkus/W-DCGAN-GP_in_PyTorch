@@ -57,7 +57,7 @@ class Discriminator(nn.Module):
                 nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
                 # No batch normalization in first layer
                 nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-                nn.Dropout2d(self.disc_dropout)
+                # nn.Dropout2d(self.disc_dropout)
                 )             
 
     def _discriminator_block(        
@@ -73,7 +73,7 @@ class Discriminator(nn.Module):
                 # NO batch normalization when using a Wasserstein GAN with gradient penalty!
                 # nn.BatchNorm2d(out_channels),
                 nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-                nn.Dropout2d(self.disc_dropout)
+                # nn.Dropout2d(self.disc_dropout)
                 ) 
 
     def _out_block(self, in_features, out_features):  
@@ -95,7 +95,6 @@ class Discriminator(nn.Module):
                 x.shape[2] == self.img_height and 
                 x.shape[3] == self.img_width)
              
-        
         # Network input
         # 512x512 -> 256x256
         x = self.in_block(x)

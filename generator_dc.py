@@ -52,7 +52,7 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(input_channels, output_channels, kernel_size, stride, padding),
             nn.BatchNorm2d(output_channels),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            nn.Dropout2d(self.gen_dropout)
+            # nn.Dropout2d(self.gen_dropout)
         )
 
     def _out_block(

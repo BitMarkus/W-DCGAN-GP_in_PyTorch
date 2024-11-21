@@ -48,9 +48,11 @@ class Train_WGAN(Train):
         plt.figure(figsize=(10,5))
         plt.title("Generator and Discriminator Loss During Training")
         plt.plot(history["G_loss"], label="G loss")
-        plt.plot(history["D_loss"], label="D loss")               
+        plt.plot(history["D_loss"], label="D loss")  
+        plt.plot(history["Grad_pen"], label="Grad pen")              
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
+        plt.ylim(-200, 200)
         plt.legend()
         plt.tight_layout()
         # Save plot
@@ -130,7 +132,7 @@ class Train_WGAN(Train):
         # Update G
         self.optimizerD.step()
 
-        return D_loss.item()
+        return D_loss.item(), gradient_penalty.item()
 
     def _train_generator(self, fake_images):
         # Reset gradients
@@ -168,7 +170,7 @@ class Train_WGAN(Train):
         # and on: https://agustinus.kristia.de/blog/wasserstein-gan/  
 
         # Metrics for plot history:
-        history = {"G_loss": [], "D_loss": []}
+        history = {"G_loss": [], "D_loss": [], "Grad_pen": []}
 
         print("\nStarting training loop...")
 
@@ -181,17 +183,6 @@ class Train_WGAN(Train):
             with tqdm(self.dataloader, unit="batch") as tepoch:
                 for step, data in enumerate(tepoch, 0):
 
-                    ############################################
-                    # Generate batches of real and fake images #
-                    ############################################
-
-                    # Get a batch of real images
-                    real_images = data[0].to(self.device)
-                    # Get batch size from actual batch (last batch can be smaller!)
-                    batch_size = real_images.size(0)
-                    # Generate fake image batch with G
-                    fake_images = self.create_generator_samples(batch_size)
-
                     #######################
                     # Train Discriminator #
                     #######################
@@ -201,12 +192,22 @@ class Train_WGAN(Train):
                     # than the discriminator network and thus needs more training
                     # TEST:
                     for _ in range(self.num_disc_training):
-                        D_loss = self._train_discriminator_grad_pen(real_images, fake_images)
+                        # Get a batch of real images
+                        real_images = data[0].to(self.device)
+                        # Get batch size from actual batch (last batch can be smaller!)
+                        batch_size = real_images.size(0)
+                        # Generate fake image batch with G
+                        fake_images = self.create_generator_samples(batch_size)
+                        # Train Discriminator
+                        D_loss, Grad_pen = self._train_discriminator_grad_pen(real_images, fake_images)
 
                     ###################
                     # Train Generator #
                     ###################
 
+                    # Generate fake image batch with G
+                    fake_images = self.create_generator_samples(batch_size)
+                    # Train Generator
                     G_loss = self._train_generator(fake_images)
 
                 ######################
@@ -236,7 +237,8 @@ class Train_WGAN(Train):
 
             history["G_loss"].append(G_loss)
             history["D_loss"].append(D_loss) 
+            history["Grad_pen"].append(Grad_pen) 
             # Print history
-            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}')
+            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}')
             
         print("Training finished!")
