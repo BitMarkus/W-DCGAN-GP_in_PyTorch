@@ -9,8 +9,8 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 64,                 
-    "num_epochs": 2000,              
+    "batch_size": 32,                 
+    "num_epochs": 5000,              
 
     # Generator
     "gen_learning_rate": 0.00005,            # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
@@ -34,8 +34,8 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 10,          # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 100,     # Save generator every x epochs in checkpoints folder
-    "generate_plot_epochs": 50,             # Save loss plot every x epochs
+    "generate_checkpoints_epochs": 500,     # Save generator every x epochs in checkpoints folder
+    "generate_plot_epochs": 100,             # Save loss plot every x epochs
 
     # Training generator several times per epoch
     "max_gen_loss_1": 0.8,
@@ -51,7 +51,6 @@ setting = {
     # WGAN
     # Training discriminator more that generator
     "num_disc_training": 5,
-
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets

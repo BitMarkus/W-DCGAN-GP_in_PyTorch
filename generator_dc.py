@@ -22,7 +22,6 @@ class Generator(nn.Module):
         # Number of channels in the training images. For color images this is 3
         self.image_channels = setting["img_channels"]
         self.gen_dropout = setting['gen_dropout']
-        self.batch_size = setting["batch_size"]
         self.lrelu_alpha = setting["lrelu_alpha"]
 
         # Define deconvolutional blocks

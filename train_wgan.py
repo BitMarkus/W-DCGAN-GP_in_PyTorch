@@ -70,7 +70,7 @@ class Train_WGAN(Train):
         for p in netD.parameters():
             p.data.clamp_(-clip_val, clip_val)
     
-    # Function for gradient penalty 2
+    # Function for gradient penalty
     # Source: https://github.com/EmilienDupont/wgan-gp/blob/master/training.py
     def _compute_gradient_penalty(self, real_data, fake_data):
         batch_size = real_data.size()[0]

@@ -16,9 +16,6 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         # Settings parameter
-        # Number of GPUs available. Use 0 for CPU mode.
-        self.ngpu = setting["num_gpu"]
-        # Number of channels in the training images. For color images this is 3
         self.input_channels = setting["img_channels"]
         self.disc_dropout = setting["disc_dropout"]
         self.lrelu_alpha = setting["lrelu_alpha"]
@@ -80,7 +77,6 @@ class Discriminator(nn.Module):
         return nn.Sequential(
             # 1x1 convolution to reduce feature maps to number of classes
             nn.Conv2d(in_features, out_features, 1, 1, 0, bias=False),
-            # Linear layer with one output node here???
             # No activation function here!
             # Vanilla GAN: nn.BCEWithLogitsLoss is a cross entropy loss that comes inside a sigmoid function
             # W-GAN: no activation function is needed at all here
