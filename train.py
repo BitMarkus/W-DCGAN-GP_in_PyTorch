@@ -359,84 +359,43 @@ class Train():
                     ###############################
 
                     # Always second and third repeat         -> Train generator 3x
-                    G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                    for _ in range(2):
+                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 0.8 and 1.0      -> Train generator 4x
                     if(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_1) and (history["G_loss"][-1] < self.max_gen_loss_2)):
                         G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
                     # If G_loss is between 1.0 and 1.3      -> Train generator 5x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_2) and (history["G_loss"][-1] < self.max_gen_loss_3)):
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(2):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 1.3 and 1.6      -> Train generator 6x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_3) and (history["G_loss"][-1] < self.max_gen_loss_4)):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(3):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 1.6 and 2.0      -> Train generator 7x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_4) and (history["G_loss"][-1] < self.max_gen_loss_5)):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(4):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 2.0 and 2.5      -> Train generator 8x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_5) and (history["G_loss"][-1] < self.max_gen_loss_6)):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(5):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 2.5 and 3.0      -> Train generator 9x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_6) and (history["G_loss"][-1] < self.max_gen_loss_7)):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(6):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 3.0 and 3.5      -> Train generator 10x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_7) and (history["G_loss"][-1] < self.max_gen_loss_8)):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(7):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is between 3.5 and 4.0      -> Train generator 12x
                     elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_8) and (history["G_loss"][-1] < self.max_gen_loss_9)):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-
+                        for _ in range(9):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
                     # If G_loss is bigger than 4.0          -> Train generator 15x
                     elif(history["G_loss"] and history["G_loss"][-1] >= self.max_gen_loss_9):
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        self._train_generator_block(batch_size)
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
+                        for _ in range(12):
+                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
 
                 ######################
                 # SAVE TRAINING DATA #
