@@ -36,7 +36,7 @@ class Discriminator(nn.Module):
         self.conv_block_7 = self._discriminator_block(256, 256)
         self.conv_block_8 = self._discriminator_block(256, 512)
         # Define decoder
-        # in_features = number of feature maps from the layer before = 256
+        # in_features = number of feature maps from the layer before = 512
         self.out_block = self._out_block(in_features=512, out_features=self.num_classes)
 
     #############################################################################################################

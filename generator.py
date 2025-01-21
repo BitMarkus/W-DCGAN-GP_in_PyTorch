@@ -124,7 +124,7 @@ class Generator(nn.Module):
         # Output block:
         # 256x256 -> 512x512
         x = self.out_block(x)
-        assert (x.shape[1] == 1 and
+        assert (x.shape[1] == self.image_channels and
                 x.shape[2] == 512 and
                 x.shape[3] == 512)   
 

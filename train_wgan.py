@@ -49,10 +49,10 @@ class Train_WGAN(Train):
         plt.title("Generator and Discriminator Loss During Training")
         plt.plot(history["G_loss"], label="G loss")
         plt.plot(history["D_loss"], label="D loss")  
-        plt.plot(history["Grad_pen"], label="Grad pen")              
+        # plt.plot(history["Grad_pen"], label="Grad pen")              
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
-        plt.ylim(-200, 200)
+        plt.ylim(-400, 400)
         plt.legend()
         plt.tight_layout()
         # Save plot
@@ -114,7 +114,9 @@ class Train_WGAN(Train):
         # Update G
         self.optimizerD.step()
         # Weight clipping -> WGAN specific
-        self._gradient_clipping(self.netD)   
+        # self._gradient_clipping(self.netD)   
+        for p in self.netD.parameters():
+            p.data.clamp_(-0.01, 0.01)
 
         return D_loss.item()
     
@@ -170,7 +172,8 @@ class Train_WGAN(Train):
         # and on: https://agustinus.kristia.de/blog/wasserstein-gan/  
 
         # Metrics for plot history:
-        history = {"G_loss": [], "D_loss": [], "Grad_pen": []}
+        # history = {"G_loss": [], "D_loss": [], "Grad_pen": []}
+        history = {"G_loss": [], "D_loss": []}
 
         print("\nStarting training loop...")
 
@@ -199,7 +202,8 @@ class Train_WGAN(Train):
                         # Generate fake image batch with G
                         fake_images = self.create_generator_samples(batch_size)
                         # Train Discriminator
-                        D_loss, Grad_pen = self._train_discriminator_grad_pen(real_images, fake_images)
+                        # D_loss, Grad_pen = self._train_discriminator_grad_pen(real_images, fake_images)
+                        D_loss = self._train_discriminator_grad_clip(real_images, fake_images)
 
                     ###################
                     # Train Generator #
@@ -237,8 +241,9 @@ class Train_WGAN(Train):
 
             history["G_loss"].append(G_loss)
             history["D_loss"].append(D_loss) 
-            history["Grad_pen"].append(Grad_pen) 
+            # history["Grad_pen"].append(Grad_pen) 
             # Print history
-            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}')
+            # print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}')
+            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}')
             
         print("Training finished!")

@@ -280,7 +280,7 @@ class Train():
     
     def _train_generator_block(self, batch_size):
         # Generate batch of latent vectors
-        noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+        noise = self._create_noise(batch_size, self.latent_vector_size, shape="4D")
         # Generate fake image batch with G
         fake_images = self.netG(noise)
         # Train generator
@@ -290,7 +290,7 @@ class Train():
     
     def create_generator_samples(self, num_samples):
         # Generate batch of latent vectors
-        noise = self._create_noise(num_samples, self.latent_vector_size, shape="2D")
+        noise = self._create_noise(num_samples, self.latent_vector_size, shape="4D")
         # Generate fake image batch with G
         samples_tensors = self.netG(noise)
 
@@ -338,7 +338,7 @@ class Train():
                     # Get batch size from actual batch (last batch can be smaller!)
                     batch_size = real_images.size(0)
                     # Generate batch of latent vectors
-                    noise = self._create_noise(batch_size, self.latent_vector_size, shape="2D")
+                    noise = self._create_noise(batch_size, self.latent_vector_size, shape="4D")
                     # Generate fake image batch with G
                     fake_images = self.netG(noise)
 
