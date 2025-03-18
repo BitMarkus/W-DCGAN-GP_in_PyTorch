@@ -25,7 +25,6 @@ class Discriminator(nn.Module):
         self.batch_size = setting["batch_size"]
         self.img_width = setting["img_size"]
         self.img_height = setting["img_size"]
-        self.num_classes = setting["num_classes"]
 
         # Network input:
         self.in_block = self._in_block(self.input_channels, 64)
@@ -38,7 +37,7 @@ class Discriminator(nn.Module):
         # Define decoder
         # in_features = number of feature maps from the layer before = 256
         # pool_size = 8 as the last feature maps have a 8x8 px dimension
-        self.decoder = self._decoder(in_features=512, out_features=self.num_classes, pool_size=8)
+        self.decoder = self._decoder(in_features=512, out_features=1, pool_size=8)
 
     #############################################################################################################
     # METHODS:
@@ -146,12 +145,12 @@ class Discriminator(nn.Module):
         # DECODER
         x = self.decoder(x) 
         # print(x.shape)
-        # Reshapes the tensor from the global average pooling layer [batch_size, num_classes, 1, 1]
-        # to the desired output tensor [batch size, num_classes]
-        x = x.view(-1, self.num_classes * 1 * 1)
+        # Reshapes the tensor from the global average pooling layer [batch_size, 1, 1, 1]
+        # to the desired output tensor [batch size, 1]
+        x = x.view(-1, 1 * 1 * 1)
         # print(x.shape)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == self.num_classes)
+                x.shape[1] == 1)
 
         return x
 

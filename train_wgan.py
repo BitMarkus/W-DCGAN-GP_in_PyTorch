@@ -152,7 +152,7 @@ class Train_WGAN(Train):
     
     def create_generator_samples(self, num_samples):
         # Generate batch of latent vectors
-        noise = self._create_noise(num_samples, self.latent_vector_size, shape="4D")
+        noise = self._create_noise(num_samples, self.latent_vector_size, shape="2D")
         # Generate fake image batch with G
         samples_tensors = self.netG(noise)
 
@@ -172,8 +172,7 @@ class Train_WGAN(Train):
         # and on: https://agustinus.kristia.de/blog/wasserstein-gan/  
 
         # Metrics for plot history:
-        # history = {"G_loss": [], "D_loss": [], "Grad_pen": []}
-        history = {"G_loss": [], "D_loss": []}
+        history = {"G_loss": [], "D_loss": [], "Grad_pen": []}
 
         print("\nStarting training loop...")
 
@@ -202,8 +201,7 @@ class Train_WGAN(Train):
                         # Generate fake image batch with G
                         fake_images = self.create_generator_samples(batch_size)
                         # Train Discriminator
-                        # D_loss, Grad_pen = self._train_discriminator_grad_pen(real_images, fake_images)
-                        D_loss = self._train_discriminator_grad_clip(real_images, fake_images)
+                        D_loss, Grad_pen = self._train_discriminator_grad_pen(real_images, fake_images)
 
                     ###################
                     # Train Generator #
@@ -241,9 +239,8 @@ class Train_WGAN(Train):
 
             history["G_loss"].append(G_loss)
             history["D_loss"].append(D_loss) 
-            # history["Grad_pen"].append(Grad_pen) 
+            history["Grad_pen"].append(Grad_pen) 
             # Print history
-            # print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}')
-            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}')
+            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}')
             
         print("Training finished!")
