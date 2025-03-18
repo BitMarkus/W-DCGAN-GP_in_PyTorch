@@ -190,9 +190,6 @@ class Train_WGAN(Train):
                     #######################
 
                     # Discriminator is supposed to be trained at least 5x more that the generator in WGAN
-                    # This might not be the case here, as the generator network is about 9x bigger
-                    # than the discriminator network and thus needs more training
-                    # TEST:
                     for _ in range(self.num_disc_training):
                         # Get a batch of real images
                         real_images = data[0].to(self.device)

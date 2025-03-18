@@ -55,8 +55,8 @@ class Generator(nn.Module):
     def _input_block(self, in_features, out_features): 
         return nn.Sequential(
             nn.Linear(in_features=in_features, out_features=out_features),
-            # nn.BatchNorm1d(out_features),
-            # nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            nn.BatchNorm1d(out_features),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
         ) 
     
     def _deconv_block(self, in_channels, out_channels):
@@ -66,7 +66,9 @@ class Generator(nn.Module):
                                kernel_size=self.kernel_size, 
                                stride=self.stride, 
                                padding=self.padding, 
-                               output_padding=self.out_padding,),
+                               output_padding=self.out_padding,
+                               # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                               bias=False),
 
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),

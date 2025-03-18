@@ -80,7 +80,7 @@ class Dataset():
         plt.tight_layout()
         plt.show()
 
-    # Loads dataset for prediction
+    # Load dataset
     def load_training_dataset(self):
         transformer = self._get_transformer()
         # Check if training images have either one or three channels
