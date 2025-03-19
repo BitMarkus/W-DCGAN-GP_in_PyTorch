@@ -55,6 +55,14 @@ class Discriminator(nn.Module):
                         kernel_size=self.kernel_size, 
                         stride=self.stride, 
                         padding=self.padding,),
+
+                # Extra convolutional layer with no change of image size or channel number
+                nn.Conv2d(out_channels, 
+                        out_channels, 
+                        kernel_size=3, 
+                        stride=1, 
+                        padding=1),
+
                 # NO batch normalization when using a Wasserstein GAN with gradient penalty!
                 nn.LeakyReLU(self.lrelu_alpha, inplace=True),
                 # nn.Dropout2d(self.disc_dropout)
