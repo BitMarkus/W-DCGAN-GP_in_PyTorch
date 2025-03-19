@@ -30,22 +30,23 @@ class Generator(nn.Module):
         self.stride = setting["conv_stride"]
         self.padding = setting["conv_padding"]
         self.out_padding = setting["conv_out_padding"]
-        self.num_max_feature_maps = setting["num_max_feature_maps"]
         self.size_min_feature_maps = setting["size_min_feature_maps"]
+        self.gen_chan_per_layer = setting["gen_chan_per_layer"]
 
         # Entry into the network
-        self.input_block = self._input_block(self.latent_vector_size, self.size_min_feature_maps*self.size_min_feature_maps*self.num_max_feature_maps)
-        # Out: [batch_size, num_max_feature_maps=512*size_min_feature_maps=4*size_min_feature_maps=4, 1, 1]
-        # Deconvolutional layers:
-        # Input: [batch_size, num_max_feature_maps=512]
-        self.deconv_block_1 = self._deconv_block(self.num_max_feature_maps, 256)  # Out: [batch_size, 256, 8, 8]
-        self.deconv_block_2 = self._deconv_block(256, 128)                        # Out: [batch_size, 128, 16, 16]
-        self.deconv_block_3 = self._deconv_block(128, 64)                         # Out: [batch_size, 64, 32, 32]
-        self.deconv_block_4 = self._deconv_block(64, 32)                          # Out: [batch_size, 32, 64, 64]
-        self.deconv_block_5 = self._deconv_block(32, 16)                          # Out: [batch_size, 16, 128, 128]
-        self.deconv_block_6 = self._deconv_block(16, 8)                           # Out: [batch_size, 8, 256, 256]
+        self.input_block = self._input_block(self.latent_vector_size, self.size_min_feature_maps*self.size_min_feature_maps*self.gen_chan_per_layer[0])
+        # Out: [batch_size, num_max_feature_maps=512*size_min_feature_maps=4*size_min_feature_maps=4] -> Reshape
+        # Deconvolutional layers: 
+        # Input: [batch_size, num_max_feature_maps=512, size_min_feature_maps=4, size_min_feature_maps=4]
+        # Channels per layer: [256, 128, 64, 32, 16, 8]
+        self.deconv_block_1 = self._deconv_block(self.gen_chan_per_layer[0], self.gen_chan_per_layer[1])  # Out: [batch_size, 256, 8, 8] 
+        self.deconv_block_2 = self._deconv_block(self.gen_chan_per_layer[1], self.gen_chan_per_layer[2])  # Out: [batch_size, 128, 16, 16]
+        self.deconv_block_3 = self._deconv_block(self.gen_chan_per_layer[2], self.gen_chan_per_layer[3])  # Out: [batch_size, 64, 32, 32]
+        self.deconv_block_4 = self._deconv_block(self.gen_chan_per_layer[3], self.gen_chan_per_layer[4])  # Out: [batch_size, 32, 64, 64]
+        self.deconv_block_5 = self._deconv_block(self.gen_chan_per_layer[4], self.gen_chan_per_layer[5])  # Out: [batch_size, 16, 128, 128]
+        self.deconv_block_6 = self._deconv_block(self.gen_chan_per_layer[5], self.gen_chan_per_layer[6])  # Out: [batch_size, 8, 256, 256]
         # Exit out of the network
-        self.output_block = self._output_block(8, self.img_channels)
+        self.output_block = self._output_block(self.gen_chan_per_layer[6], self.img_channels)
         # Out: [batch_size, img_channels, img_size, img_size]
 
 
@@ -62,15 +63,20 @@ class Generator(nn.Module):
     
     def _deconv_block(self, in_channels, out_channels):
         return nn.Sequential(
-            # Strided convolution
+
+            # Strided convolutional layer
             nn.ConvTranspose2d(in_channels, 
                                out_channels, 
                                kernel_size=self.kernel_size, 
                                stride=self.stride, 
                                padding=self.padding, 
-                               output_padding=self.out_padding),
+                               output_padding=self.out_padding,
+                               # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                               bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
 
-            # Extra convolutional layer with no change of image size or channel number
+            # Intermediate layer with no change of image size or channel number
             nn.Conv2d(out_channels, 
                     out_channels, 
                     kernel_size=3, 
@@ -78,7 +84,6 @@ class Generator(nn.Module):
                     padding=1,
                     # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
                     bias=False), 
-
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             # nn.Dropout2d(self.gen_dropout)
@@ -86,12 +91,26 @@ class Generator(nn.Module):
 
     def _output_block(self, in_channels, out_channels):
         return nn.Sequential(
+
+            # Strided convolutional layer
             nn.ConvTranspose2d(in_channels, 
                                out_channels, 
                                kernel_size=self.kernel_size, 
                                stride=self.stride, 
                                padding=self.padding, 
-                               output_padding=self.out_padding,),
+                               output_padding=self.out_padding,
+                               # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                               bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+
+            # Intermediate layer with no change of image size or channel number
+            nn.Conv2d(out_channels, 
+                    out_channels, 
+                    kernel_size=3, 
+                    stride=1, 
+                    padding=1), 
+
             nn.Tanh(),
         )
 
@@ -106,48 +125,48 @@ class Generator(nn.Module):
         # Input block:
         x = self.input_block(x)
         # print(x.shape)
-        assert (x.shape[1] == self.size_min_feature_maps*self.size_min_feature_maps*self.num_max_feature_maps)    
+        assert (x.shape[1] == self.size_min_feature_maps*self.size_min_feature_maps*self.gen_chan_per_layer[0])    
         # Out: [batch_size, num_max_feature_maps=512*size_min_feature_maps=4*size_min_feature_maps=4]
 
         # Reshape 4*4*512 to [batch_size, num_max_feature_maps=512, size_min_feature_maps=4, size_min_feature_maps=4]
-        x = x.view(-1, self.num_max_feature_maps, self.size_min_feature_maps, self.size_min_feature_maps)
-        assert (x.shape[1] == self.num_max_feature_maps and
+        x = x.view(-1, self.gen_chan_per_layer[0], self.size_min_feature_maps, self.size_min_feature_maps)
+        assert (x.shape[1] == self.gen_chan_per_layer[0] and
                 x.shape[2] == self.size_min_feature_maps and
                 x.shape[3] == self.size_min_feature_maps)     
 
         # Convolutional upscaling:
         x = self.deconv_block_1(x)
-        assert (x.shape[1] == 256 and
+        assert (x.shape[1] == self.gen_chan_per_layer[1] and
                 x.shape[2] == 8 and
                 x.shape[3] == 8) 
         # Out: [batch_size, 256, 8, 8] 
         
         x = self.deconv_block_2(x)
-        assert (x.shape[1] == 128 and
+        assert (x.shape[1] == self.gen_chan_per_layer[2] and
                 x.shape[2] == 16 and
                 x.shape[3] == 16)   
         # Out: [batch_size, 128, 16, 16]
 
         x = self.deconv_block_3(x)
-        assert (x.shape[1] == 64 and
+        assert (x.shape[1] == self.gen_chan_per_layer[3] and
                 x.shape[2] == 32 and
                 x.shape[3] == 32) 
         # Out: [batch_size, 64, 32, 32]
           
         x = self.deconv_block_4(x)
-        assert (x.shape[1] == 32 and
+        assert (x.shape[1] == self.gen_chan_per_layer[4] and
                 x.shape[2] == 64 and
                 x.shape[3] == 64)    
         # Out: [batch_size, 32, 64, 64]
 
         x = self.deconv_block_5(x)
-        assert (x.shape[1] == 16 and
+        assert (x.shape[1] == self.gen_chan_per_layer[5] and
                 x.shape[2] == 128 and
                 x.shape[3] == 128)    
         # Out: [batch_size, 16, 128, 128]
 
         x = self.deconv_block_6(x)
-        assert (x.shape[1] == 8 and
+        assert (x.shape[1] == self.gen_chan_per_layer[6] and
                 x.shape[2] == 256 and
                 x.shape[3] == 256) 
         # Out: [batch_size, 8, 256, 256]

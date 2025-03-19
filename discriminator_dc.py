@@ -28,18 +28,19 @@ class Discriminator(nn.Module):
         self.kernel_size = setting["conv_kernel_size"]
         self.stride = setting["conv_stride"]
         self.padding = setting["conv_padding"]
-        self.num_max_feature_maps = setting["num_max_feature_maps"]
         self.size_min_feature_maps = setting["size_min_feature_maps"]
+        self.disc_chan_per_layer = setting["disc_chan_per_layer"]
 
         # Network input:
         # Define convolutional blocks
-        self.conv_block_1 = self._conv_block(self.img_channels, 8) # Out: [batch_size, 8, 256, 256]
-        self.conv_block_2 = self._conv_block(8, 16)                # Out: [batch_size, 16, 128, 128]
-        self.conv_block_3 = self._conv_block(16, 32)               # Out: [batch_size, 32, 64, 64]
-        self.conv_block_4 = self._conv_block(32, 64)               # Out: [batch_size, 64, 32, 32]
-        self.conv_block_5 = self._conv_block(64, 128)              # Out: [batch_size, 128, 16, 16]
-        self.conv_block_6 = self._conv_block(128, 256)             # Out: [batch_size, 256, 8, 8]
-        self.conv_block_7 = self._conv_block(256, self.num_max_feature_maps)    # Out: [batch_size, self.num_max_feature_maps=512, self.size_min_feature_maps=4, self.size_min_feature_maps=4]
+        # Channels per layer: [8, 16, 32, 64, 128, 256]
+        self.conv_block_1 = self._conv_block(self.img_channels, self.disc_chan_per_layer[0])            # Out: [batch_size, 8, 256, 256]
+        self.conv_block_2 = self._conv_block(self.disc_chan_per_layer[0], self.disc_chan_per_layer[1])  # Out: [batch_size, 16, 128, 128]
+        self.conv_block_3 = self._conv_block(self.disc_chan_per_layer[1], self.disc_chan_per_layer[2])  # Out: [batch_size, 32, 64, 64]
+        self.conv_block_4 = self._conv_block(self.disc_chan_per_layer[2], self.disc_chan_per_layer[3])  # Out: [batch_size, 64, 32, 32]
+        self.conv_block_5 = self._conv_block(self.disc_chan_per_layer[3], self.disc_chan_per_layer[4])  # Out: [batch_size, 128, 16, 16]
+        self.conv_block_6 = self._conv_block(self.disc_chan_per_layer[4], self.disc_chan_per_layer[5])  # Out: [batch_size, 256, 8, 8]
+        self.conv_block_7 = self._conv_block(self.disc_chan_per_layer[5], self.disc_chan_per_layer[-1]) # Out: [batch_size, self.num_max_feature_maps=512, self.size_min_feature_maps=4, self.size_min_feature_maps=4]
 
         # Define decoder
         self.decoder = self._decoder(pool_size=self.size_min_feature_maps)  # Out: [batch_size, 1]
@@ -49,12 +50,15 @@ class Discriminator(nn.Module):
 
     def _conv_block(self, in_channels, out_channels):
             return nn.Sequential(
-                # Strided convolution
+                 
+                # Strided convolutional layer
                 nn.Conv2d(in_channels, 
                         out_channels, 
                         kernel_size=self.kernel_size, 
                         stride=self.stride, 
                         padding=self.padding,),
+                # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+                nn.LeakyReLU(self.lrelu_alpha, inplace=True),
 
                 # Extra convolutional layer with no change of image size or channel number
                 nn.Conv2d(out_channels, 
@@ -62,7 +66,6 @@ class Discriminator(nn.Module):
                         kernel_size=3, 
                         stride=1, 
                         padding=1),
-
                 # NO batch normalization when using a Wasserstein GAN with gradient penalty!
                 nn.LeakyReLU(self.lrelu_alpha, inplace=True),
                 # nn.Dropout2d(self.disc_dropout)
@@ -80,7 +83,7 @@ class Discriminator(nn.Module):
             nn.Flatten(),
             # Out: [batch_size, num_max_feature_maps = 512]
             # Dense layer to model complex relationships
-            nn.Linear(self.num_max_feature_maps, 128),
+            nn.Linear(self.disc_chan_per_layer[-1], 128),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             # Out: [batch_size, 128]
             # Output layer (no activation for WGAN-GP)
@@ -101,49 +104,49 @@ class Discriminator(nn.Module):
         x = self.conv_block_1(x)
         # print(x.shape)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 8 and 
+                x.shape[1] == self.disc_chan_per_layer[0] and 
                 x.shape[2] == 256 and 
                 x.shape[3] == 256)
         # Out: [batch_size, 8, 256, 256]
 
         x = self.conv_block_2(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 16 and 
+                x.shape[1] == self.disc_chan_per_layer[1] and 
                 x.shape[2] == 128 and 
                 x.shape[3] == 128)
         # Out: [batch_size, 16, 128, 128]
 
         x = self.conv_block_3(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 32 and 
+                x.shape[1] == self.disc_chan_per_layer[2] and 
                 x.shape[2] == 64 and 
                 x.shape[3] == 64)
         # Out: [batch_size, 32, 64, 64]
 
         x = self.conv_block_4(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 64 and 
+                x.shape[1] == self.disc_chan_per_layer[3] and 
                 x.shape[2] == 32 and 
                 x.shape[3] == 32)
         # Out: [batch_size, 64, 32, 32]
 
         x = self.conv_block_5(x)
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 128 and 
+                x.shape[1] == self.disc_chan_per_layer[4] and 
                 x.shape[2] == 16 and 
                 x.shape[3] == 16)
         # Out: [batch_size, 128, 16, 16]
 
         x = self.conv_block_6(x) 
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == 256 and 
+                x.shape[1] == self.disc_chan_per_layer[5] and 
                 x.shape[2] == 8 and 
                 x.shape[3] == 8)
         # Out: [batch_size, 256, 8, 8]
 
         x = self.conv_block_7(x) 
         assert (x.shape[0] <= self.batch_size and 
-                x.shape[1] == self.num_max_feature_maps and 
+                x.shape[1] == self.disc_chan_per_layer[-1] and 
                 x.shape[2] == self.size_min_feature_maps and 
                 x.shape[3] == self.size_min_feature_maps)
         # Out: [batch_size, num_max_feature_maps=512, size_min_feature_maps=4, size_min_feature_maps=4]

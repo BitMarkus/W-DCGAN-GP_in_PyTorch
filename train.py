@@ -135,7 +135,26 @@ class Train():
     #############################################################################################################
     # METHODS:
 
-    # custom weights initialization
+    # Custom weights initialization
+    # https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html#weight-initialization
+    # https://github.com/martinarjovsky/WassersteinGAN/blob/f7a01e82007ea408647c451b9e1c8f1932a3db67/main.py#L108
+    # https://stackoverflow.com/questions/49433936/how-do-i-initialize-weights-in-pytorch
+    # Initialization function according to DeepSeek:
+    def _weights_init(self, m):
+        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.Linear)):
+            # Xavier/Glorot initialization for Conv2d, ConvTranspose2d, and Linear layers
+            nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                # Initialize biases to zero
+                nn.init.constant_(m.bias, 0)
+        
+        elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm, nn.LayerNorm)):
+            # Initialize scale (weight) to 1 and shift (bias) to 0 for normalization layers
+            if m.weight is not None:
+                nn.init.constant_(m.weight, 1)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)   
+    """
     def _weights_init(self, m):
         classname = m.__class__.__name__
         if classname.find('Conv') != -1:
@@ -143,6 +162,7 @@ class Train():
         elif classname.find('BatchNorm') != -1:
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0)
+    """
 
     # Function for naming plots and figures (datetime in filename)
     def _get_filename(self, name, extension):

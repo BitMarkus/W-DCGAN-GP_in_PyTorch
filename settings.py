@@ -9,16 +9,20 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 64,                       #        
+    "batch_size": 40,                       # 64      
     "num_epochs": 1000, 
 
     # Generator
-    "gen_learning_rate": 0.00005,            # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
+    "gen_learning_rate": 0.00005,            # 0.00005 = 5e-5 for WGAN
     "gen_dropout": 0.0,
+    # "gen_chan_per_layer": [512, 256, 128, 64, 32, 16, 8],
+    "gen_chan_per_layer": [512, 512, 256, 256, 128, 128, 64],
 
     # Discriminator
-    "disc_learning_rate": 0.00005,           # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
+    "disc_learning_rate": 0.00005,           # 0.00005 = 5e-5 for WGAN
     "disc_dropout": 0.0,
+    # "disc_chan_per_layer": [8, 16, 32, 64, 128, 256, 512],
+    "disc_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -30,7 +34,6 @@ setting = {
     "conv_padding": 1,                      # Option 3: 4, 2, 1, (0) -> Exploding losses after epoch 1200, image quality worse than ks 5
     "conv_out_padding": 0, 
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
-    "num_max_feature_maps": 512, 
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
 
     # Misc
@@ -42,7 +45,7 @@ setting = {
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 1,           # Save sample images every x epochs in samples folder
     "generate_checkpoints_epochs": 100,     # Save generator every x epochs in checkpoints folder
-    "generate_plot_epochs": 25,             # Save loss plot every x epochs
+    "generate_plot_epochs": 10,             # Save loss plot every x epochs
 
     # Training generator several times per epoch
     "max_gen_loss_1": 0.8,
