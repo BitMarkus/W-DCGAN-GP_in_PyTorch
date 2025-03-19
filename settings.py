@@ -9,20 +9,16 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 40,                       # 64      
+    "batch_size": 40,                       # Strongly depends on the number of filters!      
     "num_epochs": 1000, 
 
     # Generator
     "gen_learning_rate": 0.00005,            # 0.00005 = 5e-5 for WGAN
-    "gen_dropout": 0.0,
-    # "gen_chan_per_layer": [512, 256, 128, 64, 32, 16, 8],
-    "gen_chan_per_layer": [512, 512, 256, 256, 128, 128, 64],
+    "gen_chan_per_layer": [1024, 512, 256, 128, 64, 32, 16],   # [512, 256, 128, 64, 32, 16, 8]
 
     # Discriminator
     "disc_learning_rate": 0.00005,           # 0.00005 = 5e-5 for WGAN
-    "disc_dropout": 0.0,
-    # "disc_chan_per_layer": [8, 16, 32, 64, 128, 256, 512],
-    "disc_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],
+    "disc_chan_per_layer": [16, 32, 64, 128, 256, 512, 1024],  # [8, 16, 32, 64, 128, 256, 512]
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  

@@ -17,7 +17,6 @@ class Discriminator(nn.Module):
 
         # Settings parameter
         self.ngpu = setting["num_gpu"]
-        self.disc_dropout = setting["disc_dropout"]
         self.lrelu_alpha = setting["lrelu_alpha"]
         self.batch_size = setting["batch_size"]
         self.img_width = setting["img_size"]
@@ -68,7 +67,6 @@ class Discriminator(nn.Module):
                         padding=1),
                 # NO batch normalization when using a Wasserstein GAN with gradient penalty!
                 nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-                # nn.Dropout2d(self.disc_dropout)
                 ) 
 
     def _decoder(self, pool_size,):  

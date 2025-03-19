@@ -22,7 +22,6 @@ class Generator(nn.Module):
         # Number of channels in the training images. For color images this is 3
         self.img_channels = setting["img_channels"]
         self.img_size = setting["img_size"]
-        self.gen_dropout = setting['gen_dropout']
         self.lrelu_alpha = setting["lrelu_alpha"]
         self.batch_size = setting["batch_size"]
         # Conv patameters
@@ -86,7 +85,6 @@ class Generator(nn.Module):
                     bias=False), 
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            # nn.Dropout2d(self.gen_dropout)
         )
 
     def _output_block(self, in_channels, out_channels):
@@ -99,17 +97,7 @@ class Generator(nn.Module):
                                stride=self.stride, 
                                padding=self.padding, 
                                output_padding=self.out_padding,
-                               # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
-                               bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-
-            # Intermediate layer with no change of image size or channel number
-            nn.Conv2d(out_channels, 
-                    out_channels, 
-                    kernel_size=3, 
-                    stride=1, 
-                    padding=1), 
+                               bias=True),
 
             nn.Tanh(),
         )
