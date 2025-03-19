@@ -40,8 +40,8 @@ class Dataset():
         # https://stackoverflow.com/questions/60116208/pytorch-load-dataset-of-grayscale-images
         if(self.input_channels == 1):
             transformer = transforms.Compose([
-                transforms.Resize(self.img_size),
-                transforms.CenterCrop(self.img_size),
+                # transforms.Resize(self.img_size),
+                # transforms.CenterCrop(self.img_size),
                 # 0-255 to 0-1, numpy to tensors:
                 transforms.ToTensor(), 
                 # Normalization of the image in the range [-1,1]
@@ -57,8 +57,8 @@ class Dataset():
         # https://pytorch.org/hub/pytorch_vision_resnet/
         elif(self.input_channels == 3):
             transformer = transforms.Compose([
-                transforms.Resize(self.img_size),
-                transforms.CenterCrop(self.img_size),
+                # transforms.Resize(self.img_size),
+                # transforms.CenterCrop(self.img_size),
                 # 0-255 to 0-1, numpy to tensors:
                 transforms.ToTensor(), 
                 # Normalization of the image in the range [-1,1]
@@ -91,10 +91,11 @@ class Dataset():
                 dataset, 
                 batch_size=self.batch_size, 
                 shuffle=True,
-                num_workers=self.num_workers
+                num_workers=self.num_workers,
+                # pin_memory=True, <- No difference in loading speed
             )
             return data_loader  
         else:
             print("Loading of dataset failed! Input images must have either one (grayscale) or three (RGB) channels.")
-            return False
-        
+            return False 
+

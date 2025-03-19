@@ -49,7 +49,7 @@ class Train_WGAN(Train):
         plt.title("Generator and Discriminator Loss During Training")
         plt.plot(history["G_loss"], label="G loss")
         plt.plot(history["D_loss"], label="D loss")  
-        # plt.plot(history["Grad_pen"], label="Grad pen")              
+        plt.plot(history["Grad_pen"], label="Grad pen")              
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.ylim(-400, 400)

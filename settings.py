@@ -5,12 +5,12 @@
 setting = {
 
     # GPU and GPU
-    "num_workers": 8,                       # Number of workers for dataloader, Default: 2
+    "num_workers": 1,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Hyperparameter
-    "batch_size": 300,                       # 300 for W-DCGAN-GC              
-    "num_epochs": 1000,              
+    "batch_size": 64,                       #        
+    "num_epochs": 1000, 
 
     # Generator
     "gen_learning_rate": 0.00005,            # 0.0002 for vanilla GAN, 0.00005 = 5e-5 for WGAN
