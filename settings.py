@@ -33,7 +33,7 @@ setting = {
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
 
     # Misc
-    "adam_beta_1": 0.0,                     # Beta 1 and 2 parameter for ADAM optimizer, Default for GAN: 0.5
+    "adam_beta_1": 0.0,                     # Beta 1 and 2 parameter for ADAM optimizer
     "adam_beta_2": 0.9,
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
 
@@ -41,7 +41,7 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 1,           # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 50,     # Save generator every x epochs in checkpoints folder
+    "generate_checkpoints_epochs": 50,      # Save generator every x epochs in checkpoints folder
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
 
     # Training generator several times per epoch
@@ -58,7 +58,7 @@ setting = {
     # WGAN
     # Training discriminator more that generator
     "num_disc_training": 2,                 # 5
-    "gradient_penalty_weight": 100,         # 10
+    "gradient_penalty_weight": 10,          # 10
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
