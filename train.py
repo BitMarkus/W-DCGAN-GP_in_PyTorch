@@ -89,6 +89,17 @@ class Train():
         # Path for saving checkpoints
         self.pth_checkpoints = setting["pth_checkpoints"]
         # Training generator several times per epoch
+        """
+        "max_gen_loss_1": 0.8,
+        "max_gen_loss_2": 1.0,
+        "max_gen_loss_3": 1.3,
+        "max_gen_loss_4": 1.6,
+        "max_gen_loss_5": 2.0,
+        "max_gen_loss_6": 2.5,
+        "max_gen_loss_7": 3.0,
+        "max_gen_loss_8": 3.5,
+        "max_gen_loss_9": 4.0,
+        """
         self.max_gen_loss_1 = setting["max_gen_loss_1"]
         self.max_gen_loss_2 = setting["max_gen_loss_2"]
         self.max_gen_loss_3 = setting["max_gen_loss_3"]

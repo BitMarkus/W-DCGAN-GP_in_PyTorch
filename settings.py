@@ -57,8 +57,8 @@ setting = {
 
     # WGAN
     # Training discriminator more that generator
-    "num_disc_training": 5,                 # 5
-    "gradient_penalty_weight": 10,          # 10
+    "num_disc_training": 2,                 # 5
+    "gradient_penalty_weight": 100,         # 10
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets

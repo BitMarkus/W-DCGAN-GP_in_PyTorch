@@ -106,6 +106,7 @@ class Train_WGAN(Train):
             inputs=interpolated,
             grad_outputs=torch.ones_like(prob_interpolated),
             create_graph=True,  # Needed for higher-order derivatives
+            # retain_graph=False,  # No need to retain
             retain_graph=True,  # Optional (only if you reuse the graph later)
         )[0]
         # Gradients have shape (batch_size, num_channels, img_width, img_height),
@@ -116,6 +117,7 @@ class Train_WGAN(Train):
         gradients_norm = gradients.norm(2, dim=1)    
         # Calculate gradient penalty
         gradient_penalty = self.gp_weight * ((gradients_norm - 1) ** 2).mean()
+        # assert not torch.isnan(gradient_penalty)
         
         return gradient_penalty, gradients_norm.mean().item()
 
