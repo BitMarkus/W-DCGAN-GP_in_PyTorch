@@ -13,11 +13,11 @@ setting = {
     "num_epochs": 1000, 
 
     # Generator
-    "gen_learning_rate": 0.00005,            # 0.00005 = 5e-5 for WGAN
+    "gen_learning_rate": 0.0001,            # 0.00005 = 5e-5 for RMSprop
     "gen_chan_per_layer": [512, 256, 256, 128, 128, 64, 64],   # [512, 256, 128, 64, 32, 16, 8][1024, 512, 256, 128, 64, 32, 16][512, 512, 256, 256, 128, 128, 64]
 
     # Discriminator
-    "disc_learning_rate": 0.00005,           # 0.00005 = 5e-5 for WGAN
+    "disc_learning_rate": 0.00005,           # 0.00005 = 5e-5 for RMSprop
     "disc_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],  # [8, 16, 32, 64, 128, 256, 512][16, 32, 64, 128, 256, 512, 1024][64, 128, 128, 256, 256, 512, 512]
 
     # Input/output dims
@@ -33,7 +33,8 @@ setting = {
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
 
     # Misc
-    "opt_beta_1": 0.5,                      # Beta 1 parameter for ADAM optimizer, Default for GAN: 0.5
+    "adam_beta_1": 0.0,                     # Beta 1 and 2 parameter for ADAM optimizer, Default for GAN: 0.5
+    "adam_beta_2": 0.9,
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
 
     # Sample and plot generation
@@ -56,12 +57,13 @@ setting = {
 
     # WGAN
     # Training discriminator more that generator
-    "num_disc_training": 10,
+    "num_disc_training": 5,                 # 5
+    "gradient_penalty_weight": 10,          # 10
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
-    "pth_data": "data/fibroblasts/",      # Root directory for the current dataset
-    # "pth_data": "data/faces/",              # Root directory for the current dataset
+    "pth_data": "data/fibroblasts/",        # Root directory for the current dataset
+    # "pth_data": "data/faces/",            # Root directory for the current dataset
     "pth_samples": "samples/",              # Directory for generated samples during training
     "pth_plots": "plots/",                  # Directory for saving plots
     "pth_checkpoints": "checkpoints/",      # Directory for saving checkpoints

@@ -69,8 +69,9 @@ class Train():
         self.gen_learning_rate = setting["gen_learning_rate"]
         # Learning rate for discriminator
         self.disc_learning_rate = setting["disc_learning_rate"]
-        # Beta1 hyperparameter for Adam optimizers
-        self.beta1 = setting["opt_beta_1"]
+        # Parameters for optimizer
+        self.adam_beta_1 = setting["adam_beta_1"]
+        self.adam_beta_2 = setting["adam_beta_2"]
         # Boolian variable if samples suppose to be generated during training
         self.generate_samples = setting["generate_samples"]
         # Number of samples to visualize the result of the generator
@@ -109,7 +110,7 @@ class Train():
         # Apply the weights_init function to randomly initialize all weights
         self.netD.apply(self._weights_init)
         # Setup Adam optimizer
-        self.optimizerD = optim.Adam(self.netD.parameters(), lr=self.disc_learning_rate, betas=(self.beta1, 0.999))
+        self.optimizerD = optim.Adam(self.netD.parameters(), lr=self.disc_learning_rate, betas=(self.adam_beta_1, self.adam_beta_2))
         
         ####################
         # Create generator #
@@ -122,7 +123,7 @@ class Train():
             self.netG = nn.DataParallel(self.netG, list(range(self.num_gpu)))
         # Apply the weights_init function to randomly initialize all weights
         self.netG.apply(self._weights_init)        
-        self.optimizerG = optim.Adam(self.netG.parameters(), lr=self.gen_learning_rate, betas=(self.beta1, 0.999)) 
+        self.optimizerG = optim.Adam(self.netG.parameters(), lr=self.gen_learning_rate, betas=(self.adam_beta_1, self.adam_beta_2)) 
 
         # Initialize the BCEWithLogitsLoss function
         # Using this loss function doesn't require to define a sigmoid function

@@ -32,17 +32,15 @@ class Discriminator(nn.Module):
 
         # Network input:
         # Define convolutional blocks
-        # Channels per layer: [8, 16, 32, 64, 128, 256]
-        self.conv_block_1 = self._conv_block(self.img_channels, self.disc_chan_per_layer[0])            # Out: [batch_size, 8, 256, 256]
-        self.conv_block_2 = self._conv_block(self.disc_chan_per_layer[0], self.disc_chan_per_layer[1])  # Out: [batch_size, 16, 128, 128]
-        self.conv_block_3 = self._conv_block(self.disc_chan_per_layer[1], self.disc_chan_per_layer[2])  # Out: [batch_size, 32, 64, 64]
-        self.conv_block_4 = self._conv_block(self.disc_chan_per_layer[2], self.disc_chan_per_layer[3])  # Out: [batch_size, 64, 32, 32]
-        self.conv_block_5 = self._conv_block(self.disc_chan_per_layer[3], self.disc_chan_per_layer[4])  # Out: [batch_size, 128, 16, 16]
-        self.conv_block_6 = self._conv_block(self.disc_chan_per_layer[4], self.disc_chan_per_layer[5])  # Out: [batch_size, 256, 8, 8]
-        self.conv_block_7 = self._conv_block(self.disc_chan_per_layer[5], self.disc_chan_per_layer[-1]) # Out: [batch_size, self.num_max_feature_maps=512, self.size_min_feature_maps=4, self.size_min_feature_maps=4]
+        self.conv_block_1 = self._conv_block(self.img_channels, self.disc_chan_per_layer[0])            # Out: [batch_size, ch, 256, 256]
+        self.conv_block_2 = self._conv_block(self.disc_chan_per_layer[0], self.disc_chan_per_layer[1])  # Out: [batch_size, ch, 128, 128]
+        self.conv_block_3 = self._conv_block(self.disc_chan_per_layer[1], self.disc_chan_per_layer[2])  # Out: [batch_size, ch, 64, 64]
+        self.conv_block_4 = self._conv_block(self.disc_chan_per_layer[2], self.disc_chan_per_layer[3])  # Out: [batch_size, ch, 32, 32]
+        self.conv_block_5 = self._conv_block(self.disc_chan_per_layer[3], self.disc_chan_per_layer[4])  # Out: [batch_size, ch, 16, 16]
+        self.conv_block_6 = self._conv_block(self.disc_chan_per_layer[4], self.disc_chan_per_layer[5])  # Out: [batch_size, ch, 8, 8]
+        self.conv_block_7 = self._conv_block(self.disc_chan_per_layer[5], self.disc_chan_per_layer[-1]) # Out: [batch_size, max_ch=512, size_min_feature_maps=4, size_min_feature_maps=4]
 
         # Define decoder
-        # self.decoder = self._decoder(pool_size=self.size_min_feature_maps)  # Out: [batch_size, 1]
         self.decoder = self._decoder()  # Out: [batch_size, 1]
 
     #############################################################################################################
@@ -50,80 +48,39 @@ class Discriminator(nn.Module):
 
     # Improved version according to DeepSeek:
     def _conv_block(self, in_channels, out_channels):
-            return nn.Sequential(
-                 
-                # Strided convolutional layer with spectral normalization
-                nn.utils.spectral_norm(nn.Conv2d(
-                        in_channels, 
-                        out_channels, 
-                        kernel_size=self.kernel_size, 
-                        stride=self.stride, 
-                        padding=self.padding,)),
-                # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-                nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+        return nn.Sequential(
+                
+            # Strided convolutional layer with spectral normalization
+            nn.utils.spectral_norm(nn.Conv2d(
+                    in_channels, 
+                    out_channels, 
+                    kernel_size=self.kernel_size, 
+                    stride=self.stride, 
+                    padding=self.padding,)),
+            # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
 
-                # Extra convolutional layer with no change of image size or channel number
-                nn.utils.spectral_norm(nn.Conv2d(
-                        out_channels, 
-                        out_channels, 
-                        kernel_size=3, 
-                        stride=1, 
-                        padding=1)),
-                # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-                nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-                )  
-    """
-    def _conv_block(self, in_channels, out_channels):
-            return nn.Sequential(
-                 
-                # Strided convolutional layer
-                nn.Conv2d(in_channels, 
-                        out_channels, 
-                        kernel_size=self.kernel_size, 
-                        stride=self.stride, 
-                        padding=self.padding,),
-                # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-                nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-
-                # Extra convolutional layer with no change of image size or channel number
-                nn.Conv2d(out_channels, 
-                        out_channels, 
-                        kernel_size=3, 
-                        stride=1, 
-                        padding=1),
-                # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-                nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-                ) 
-    """
+            # Extra convolutional layer with no change of image size or channel number
+            nn.utils.spectral_norm(nn.Conv2d(
+                    out_channels, 
+                    out_channels, 
+                    kernel_size=3, 
+                    stride=1, 
+                    padding=1)),
+            # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            )  
 
     # Improved version according to DeepSeek:
     def _decoder(self):  
         return nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),  # Out: [batch_size, final_channels, 1, 1]
-            nn.Flatten(),             # Out: [batch_size, final_channels]
+            # Adaptive Pooling: Unlike standard pooling (e.g., AvgPool2d), you specify the output size (e.g., (H, W), here: (1, 1)), 
+            # # and PyTorch automatically computes the required kernel size and stride to achieve that size
+            # In: [batch_size, max_feature_maps=512, size_min_feature_maps=4, size_min_feature_maps=4]
+            nn.AdaptiveAvgPool2d(1),  # Out: [batch_size, max_feature_maps, 1, 1]
+            nn.Flatten(),             # Out: [batch_size, max_feature_maps]
             nn.Linear(self.disc_chan_per_layer[-1], 1),  # Out: [batch_size, 1]
         )
-    """
-    def _decoder(self, pool_size,):  
-        return nn.Sequential(
-            # https://discuss.pytorch.org/t/global-average-pooling-in-pytorch/6721/4
-            # https://blog.paperspace.com/global-pooling-in-convolutional-neural-networks/
-            # Global average pooling: 4 as the size of the last feature maps is 4x4 
-            # In: [batch_size, num_max_feature_maps = 512, 4, 4]
-            nn.AvgPool2d(pool_size),
-            # Out: [batch_size, num_max_feature_maps = 512, 1, 1]
-            # Flatten
-            nn.Flatten(),
-            # Out: [batch_size, num_max_feature_maps = 512]
-            # Dense layer to model complex relationships
-            nn.Linear(self.disc_chan_per_layer[-1], 128),
-            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            # Out: [batch_size, 128]
-            # Output layer (no activation for WGAN-GP)
-            nn.Linear(128, 1),
-            # Out: [batch_size, 1]
-        )
-    """
 
     #############################################################################################################
     # FORWARD:
@@ -141,49 +98,49 @@ class Discriminator(nn.Module):
                 x.shape[1] == self.disc_chan_per_layer[0] and 
                 x.shape[2] == 256 and 
                 x.shape[3] == 256)
-        # Out: [batch_size, 8, 256, 256]
+        # Out: [batch_size, ch, 256, 256]
 
         x = self.conv_block_2(x)
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.disc_chan_per_layer[1] and 
                 x.shape[2] == 128 and 
                 x.shape[3] == 128)
-        # Out: [batch_size, 16, 128, 128]
+        # Out: [batch_size, ch, 128, 128]
 
         x = self.conv_block_3(x)
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.disc_chan_per_layer[2] and 
                 x.shape[2] == 64 and 
                 x.shape[3] == 64)
-        # Out: [batch_size, 32, 64, 64]
+        # Out: [batch_size, ch, 64, 64]
 
         x = self.conv_block_4(x)
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.disc_chan_per_layer[3] and 
                 x.shape[2] == 32 and 
                 x.shape[3] == 32)
-        # Out: [batch_size, 64, 32, 32]
+        # Out: [batch_size, ch, 32, 32]
 
         x = self.conv_block_5(x)
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.disc_chan_per_layer[4] and 
                 x.shape[2] == 16 and 
                 x.shape[3] == 16)
-        # Out: [batch_size, 128, 16, 16]
+        # Out: [batch_size, ch, 16, 16]
 
         x = self.conv_block_6(x) 
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.disc_chan_per_layer[5] and 
                 x.shape[2] == 8 and 
                 x.shape[3] == 8)
-        # Out: [batch_size, 256, 8, 8]
+        # Out: [batch_size, ch, 8, 8]
 
         x = self.conv_block_7(x) 
         assert (x.shape[0] <= self.batch_size and 
                 x.shape[1] == self.disc_chan_per_layer[-1] and 
                 x.shape[2] == self.size_min_feature_maps and 
                 x.shape[3] == self.size_min_feature_maps)
-        # Out: [batch_size, num_max_feature_maps=512, size_min_feature_maps=4, size_min_feature_maps=4]
+        # Out: [batch_size, max_ch=512, size_min_feature_maps=4, size_min_feature_maps=4]
         
         # DECODER
         x = self.decoder(x) 
@@ -194,3 +151,49 @@ class Discriminator(nn.Module):
 
         return x
 
+"""
+# Alternative decoder:
+def _decoder(self, pool_size,):  
+    return nn.Sequential(
+        # https://discuss.pytorch.org/t/global-average-pooling-in-pytorch/6721/4
+        # https://blog.paperspace.com/global-pooling-in-convolutional-neural-networks/
+        # Global average pooling: 4 as the size of the last feature maps is 4x4 
+        # In: [batch_size, num_max_feature_maps = 512, 4, 4]
+        nn.AvgPool2d(pool_size),
+        # Out: [batch_size, num_max_feature_maps = 512, 1, 1]
+        # Flatten
+        nn.Flatten(),
+        # Out: [batch_size, num_max_feature_maps = 512]
+        # Dense layer to model complex relationships
+        nn.Linear(self.disc_chan_per_layer[-1], 128),
+        nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+        # Out: [batch_size, 128]
+        # Output layer (no activation for WGAN-GP)
+        nn.Linear(128, 1),
+        # Out: [batch_size, 1]
+    )
+"""
+"""
+# Alternative convolutional block:
+def _conv_block(self, in_channels, out_channels):
+    return nn.Sequential(
+            
+        # Strided convolutional layer
+        nn.Conv2d(in_channels, 
+                out_channels, 
+                kernel_size=self.kernel_size, 
+                stride=self.stride, 
+                padding=self.padding,),
+        # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+        nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+
+        # Extra convolutional layer with no change of image size or channel number
+        nn.Conv2d(out_channels, 
+                out_channels, 
+                kernel_size=3, 
+                stride=1, 
+                padding=1),
+        # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+        nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+        ) 
+"""
