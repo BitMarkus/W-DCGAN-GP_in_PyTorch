@@ -14,21 +14,21 @@ setting = {
 
     # Generator
     "gen_learning_rate": 0.00005,            # 0.00005 = 5e-5 for WGAN
-    "gen_chan_per_layer": [1024, 512, 256, 128, 64, 32, 16],   # [512, 256, 128, 64, 32, 16, 8]
+    "gen_chan_per_layer": [512, 256, 256, 128, 128, 64, 64],   # [512, 256, 128, 64, 32, 16, 8][1024, 512, 256, 128, 64, 32, 16][512, 512, 256, 256, 128, 128, 64]
 
     # Discriminator
     "disc_learning_rate": 0.00005,           # 0.00005 = 5e-5 for WGAN
-    "disc_chan_per_layer": [16, 32, 64, 128, 256, 512, 1024],  # [8, 16, 32, 64, 128, 256, 512]
+    "disc_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],  # [8, 16, 32, 64, 128, 256, 512][16, 32, 64, 128, 256, 512, 1024][64, 128, 128, 256, 256, 512, 512]
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
     "img_size": 512,                        # Spatial size of training images. All images will be resized to this size using a transformer
 
     # Conv parameters
-    "conv_kernel_size": 4,                  # Option 1: 5, 2, 2, (1) -> Exploding losses after epoch 500, image quality better than ks 3
-    "conv_stride": 2,                       # Option 2: 3, 2, 1, (1) -> Seems to only pick up local details, but not the bigger picture
-    "conv_padding": 1,                      # Option 3: 4, 2, 1, (0) -> Exploding losses after epoch 1200, image quality worse than ks 5
-    "conv_out_padding": 0, 
+    "conv_kernel_size": 5,                  # Option 1: 5, 2, 2, (1) -> Seems to work best
+    "conv_stride": 2,                       # Option 2: 3, 2, 1, (1) -> Most common one! Should be used
+    "conv_padding": 2,                      # Option 3: 4, 2, 1, (0) -> Not so common. Causes asymetries
+    "conv_out_padding": 1, 
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
 
@@ -40,7 +40,7 @@ setting = {
     "generate_samples": True,
     "num_samples": 2,                       # Number of images, which will be saved during training as examples
     "generate_samples_epochs": 1,           # Save sample images every x epochs in samples folder
-    "generate_checkpoints_epochs": 100,     # Save generator every x epochs in checkpoints folder
+    "generate_checkpoints_epochs": 50,     # Save generator every x epochs in checkpoints folder
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
 
     # Training generator several times per epoch
@@ -56,7 +56,7 @@ setting = {
 
     # WGAN
     # Training discriminator more that generator
-    "num_disc_training": 5,
+    "num_disc_training": 10,
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
