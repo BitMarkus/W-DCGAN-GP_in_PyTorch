@@ -78,6 +78,8 @@ class Train():
         )
         # RMSprop: 
         # self.optimizerC = optim.RMSprop(self.netC.parameters(), lr=self.disc_learning_rate)
+        # Learning rate scheduler
+        self.schedulerC = optim.lr_scheduler.CosineAnnealingLR(self.optimizerC, T_max=self.num_epochs)
         
         ####################
         # Create generator #
@@ -98,6 +100,8 @@ class Train():
         )
         # RMSprop:
         # self.optimizerG = optim.RMSprop(self.netG.parameters(), lr=self.gen_learning_rate)
+        # Learning rate scheduler
+        self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, T_max=self.num_epochs)
 
     #############################################################################################################
     # METHODS:
@@ -313,7 +317,7 @@ class Train():
         # and on: https://agustinus.kristia.de/blog/wasserstein-gan/  
 
         # Metrics for plot history:
-        history = {"G_loss": [], "C_loss": [], "Grad_pen": [], "Grad_norm": []}
+        history = {"G_loss": [], "C_loss": [], "Grad_pen": [], "Grad_norm": [], "G_lr": [], "C_lr": []}
 
         print("\nStarting training loop...")
 
@@ -329,9 +333,9 @@ class Train():
                     real_images = data[0].to(self.device)
                     batch_size = real_images.size(0)
 
-                    #######################
-                    # Train critic #
-                    #######################
+                    ################
+                    # Train Critic #
+                    ################
 
                     # critic is supposed to be trained at least 5x more that the generator in WGAN
                     fake_images = self.create_generator_samples(batch_size)
@@ -349,6 +353,15 @@ class Train():
                     fake_images = self.create_generator_samples(batch_size)
                     # Train Generator
                     G_loss = self._train_generator(fake_images)
+
+                ##################################
+                # Update learning rate scheduler #
+                ##################################
+
+                self.schedulerC.step()
+                C_lr = self.schedulerC.get_last_lr()[0]
+                self.schedulerG.step()
+                G_lr = self.schedulerG.get_last_lr()[0]
 
                 ######################
                 # SAVE TRAINING DATA #
@@ -379,8 +392,10 @@ class Train():
             history["C_loss"].append(C_loss) 
             history["Grad_pen"].append(Grad_pen)
             history["Grad_norm"].append(Grad_norm)
+            history["G_lr"].append(G_lr)
+            history["C_lr"].append(C_lr)
             # Print history
-            print(f'Loss_C: {C_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}')
+            print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.4f}, G_LR: {G_lr:.4f}')
             
         print("Training finished!")
 
