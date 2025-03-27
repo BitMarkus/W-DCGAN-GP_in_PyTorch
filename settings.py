@@ -14,13 +14,13 @@ setting = {
 
     # Learning rate (scheduler) parameters for CosineAnnealingWarmRestarts
     # Generator
-    "gen_learning_rate": 0.0001,            # 0.0001
+    "gen_learning_rate": 0.0001,            # 1e-4
     "gen_lrs_eta_min": 0.000001,            # Minimum LR to avoid stalling, 1e-6
     "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
     "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
     # Critic
-    "crit_learning_rate": 0.00005,          # 0.00005
-    "crit_lrs_eta_min": 0.000001,           # 1e-6
+    "crit_learning_rate": 0.00005,          # 5e-5
+    "crit_lrs_eta_min": 0.00001,            # 1e-5
     "crit_lrs_t_0": 10,                     # 10
     "crit_lrs_t_mult": 2,                   # 2
 
@@ -54,7 +54,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 1,                 # 2
+    "num_crit_training": 2,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths

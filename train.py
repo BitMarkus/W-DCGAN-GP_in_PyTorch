@@ -168,7 +168,7 @@ class Train():
         plt.plot(history["Grad_norm"], label="Grad norm")           
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
-        plt.ylim(-400, 400)
+        # plt.ylim(-400, 400)
         plt.legend()
         plt.tight_layout()
         # Save plot
