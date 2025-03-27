@@ -1,36 +1,3 @@
-#############################################################################
-# Tips for GAN modelling:
-# Source: https://machinelearningmastery.com/how-to-train-stable-generative-adversarial-networks/
-#
-# - Replace all pooling layers with strided convolutions (discriminator) and fractional-strided convolutions (generator):
-#      Use the stride in convolutional layers to perform downsampling in the discriminator model
-#      Use ConvTranspose2D and stride for upsampling in the generator model
-#
-# - Use batchnorm in both the generator and the discriminator:
-#      Batch norm layers are recommended in both the discriminator and generator models, except the output of the generator 
-#      and input to the discriminator
-#
-# - Remove fully connected hidden layers for deeper architectures:
-#      In the discriminator the convolutional layers are flattened and passed directly to the output layer
-#      The random Gaussian input vector passed to the generator model is reshaped directly into a multi-dimensional 
-#      tensor that can be passed to the first convolutional layer ready for upscaling
-#
-# - Use LeakyReLU activation in generator for all layers except the output layer
-#
-# - Normalize inputs to the range [-1, 1] and use Tanh activation in generator for output layer
-#
-# - Use LeakyReLU activation in the discriminator for all layers
-#
-# - Use Adam Optimization: 
-#      recommended batch size: 128
-#      learning rate: 0.0002
-#      momentum (beta1): 0.5
-#
-# - Use dropout of 50 percent during train and generation
-#
-# - Use a kernel size that’s divisible by the stride size for strided Conv2DTranpose or Conv2D in both the generator and the discriminator
-#############################################################################
-
 import torch
 from torch import nn
 import torch.optim as optim
@@ -43,10 +10,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # Own modules
 from settings import setting
-# from generator import Generator
-# from discriminator import Discriminator
-from discriminator_dc import Discriminator
-from generator_dc import Generator
+from critic import Critic
+from generator import Generator
 
 class Train():
 
@@ -67,11 +32,16 @@ class Train():
         self.num_gpu = setting["num_gpu"]
         # Learning rate for generator
         self.gen_learning_rate = setting["gen_learning_rate"]
-        # Learning rate for discriminator
-        self.disc_learning_rate = setting["disc_learning_rate"]
+        # Learning rate for critic
+        self.crit_learning_rate = setting["crit_learning_rate"]
         # Parameters for optimizer
         self.adam_beta_1 = setting["adam_beta_1"]
         self.adam_beta_2 = setting["adam_beta_2"]
+        # Training critic more that generator
+        self.num_crit_training = setting["num_crit_training"]
+        # Gradient penalty
+        self.gp_weight = setting["gradient_penalty_weight"]
+
         # Boolian variable if samples suppose to be generated during training
         self.generate_samples = setting["generate_samples"]
         # Number of samples to visualize the result of the generator
@@ -82,46 +52,32 @@ class Train():
         self.generate_checkpoints_epochs = setting["generate_checkpoints_epochs"]
         # Save loss plot every x epochs in plots folder
         self.generate_plot_epochs = setting["generate_plot_epochs"]
+
         # Path for samples
         self.pth_samples = setting["pth_samples"]
         # Path for saving plots
         self.pth_plots = setting["pth_plots"]
         # Path for saving checkpoints
         self.pth_checkpoints = setting["pth_checkpoints"]
-        # Training generator several times per epoch
-        """
-        "max_gen_loss_1": 0.8,
-        "max_gen_loss_2": 1.0,
-        "max_gen_loss_3": 1.3,
-        "max_gen_loss_4": 1.6,
-        "max_gen_loss_5": 2.0,
-        "max_gen_loss_6": 2.5,
-        "max_gen_loss_7": 3.0,
-        "max_gen_loss_8": 3.5,
-        "max_gen_loss_9": 4.0,
-        """
-        self.max_gen_loss_1 = setting["max_gen_loss_1"]
-        self.max_gen_loss_2 = setting["max_gen_loss_2"]
-        self.max_gen_loss_3 = setting["max_gen_loss_3"]
-        self.max_gen_loss_4 = setting["max_gen_loss_4"]
-        self.max_gen_loss_5 = setting["max_gen_loss_5"]
-        self.max_gen_loss_6 = setting["max_gen_loss_6"]
-        self.max_gen_loss_7 = setting["max_gen_loss_7"]
-        self.max_gen_loss_8 = setting["max_gen_loss_8"]
-        self.max_gen_loss_9 = setting["max_gen_loss_9"]
 
-        ########################
-        # Create discriminator #
-        ########################
+        #################
+        # Create critic #
+        #################
 
-        self.netD = Discriminator().to(self.device)
+        self.netC = Critic().to(self.device)
         # Handle multi-GPU if desired
         if(self.device.type == 'cuda') and (self.num_gpu > 1):
             self.netG = nn.DataParallel(self.netG, list(range(self.num_gpu)))
         # Apply the weights_init function to randomly initialize all weights
-        self.netD.apply(self._weights_init)
+        self.netC.apply(self._weights_init)
         # Setup Adam optimizer
-        self.optimizerD = optim.Adam(self.netD.parameters(), lr=self.disc_learning_rate, betas=(self.adam_beta_1, self.adam_beta_2))
+        self.optimizerC = optim.Adam(
+            self.netC.parameters(), 
+            lr=self.crit_learning_rate, 
+            betas=(self.adam_beta_1, self.adam_beta_2)
+        )
+        # RMSprop: 
+        # self.optimizerC = optim.RMSprop(self.netC.parameters(), lr=self.disc_learning_rate)
         
         ####################
         # Create generator #
@@ -133,16 +89,15 @@ class Train():
         if (self.device.type == 'cuda') and (self.num_gpu > 1):
             self.netG = nn.DataParallel(self.netG, list(range(self.num_gpu)))
         # Apply the weights_init function to randomly initialize all weights
-        self.netG.apply(self._weights_init)        
-        self.optimizerG = optim.Adam(self.netG.parameters(), lr=self.gen_learning_rate, betas=(self.adam_beta_1, self.adam_beta_2)) 
-
-        # Initialize the BCEWithLogitsLoss function
-        # Using this loss function doesn't require to define a sigmoid function
-        # in the discriminator network as it is included
-        self.criterion = nn.BCEWithLogitsLoss()
-        # Labels convention for real and fake data
-        self.real_label = 1.
-        self.fake_label = 0.
+        self.netG.apply(self._weights_init) 
+        # Setup Adam optimizer       
+        self.optimizerG = optim.Adam(
+            self.netG.parameters(), 
+            lr=self.gen_learning_rate,
+            betas=(self.adam_beta_1, self.adam_beta_2)
+        )
+        # RMSprop:
+        # self.optimizerG = optim.RMSprop(self.netG.parameters(), lr=self.gen_learning_rate)
 
     #############################################################################################################
     # METHODS:
@@ -166,15 +121,6 @@ class Train():
                 nn.init.constant_(m.weight, 1)
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)   
-    """
-    def _weights_init(self, m):
-        classname = m.__class__.__name__
-        if classname.find('Conv') != -1:
-            nn.init.normal_(m.weight.data, 0.0, 0.02)
-        elif classname.find('BatchNorm') != -1:
-            nn.init.normal_(m.weight.data, 1.0, 0.02)
-            nn.init.constant_(m.bias.data, 0)
-    """
 
     # Function for naming plots and figures (datetime in filename)
     def _get_filename(self, name, extension):
@@ -184,7 +130,7 @@ class Train():
         filename = f'{current_datetime}_{name}{extension}'
         return filename
 
-    # Prints plot with generator and discriminator losses after training
+    # Prints plot with generator and critic losses after training
     def _plot_training_losses(
             self, 
             history,
@@ -195,14 +141,14 @@ class Train():
             ):
         # losses versus training iterations
         plt.figure(figsize=(10,5))
-        plt.title("Generator and Discriminator Loss During Training")
+        plt.title("Generator and Critic Loss During Training")
         plt.plot(history["G_loss"], label="G loss")
-        plt.plot(history["D_loss"], label="D loss")
-        plt.plot(history["D_x"], label="D(x)")
-        plt.plot(history["D_G_z1"], label="D(G(x))_1")
-        plt.plot(history["D_G_z2"], label="D(G(x))_2")                 
+        plt.plot(history["C_loss"], label="C loss")  
+        plt.plot(history["Grad_pen"], label="Grad pen")  
+        plt.plot(history["Grad_norm"], label="Grad norm")           
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
+        plt.ylim(-400, 400)
         plt.legend()
         plt.tight_layout()
         # Save plot
@@ -212,7 +158,7 @@ class Train():
             plt.close()
         # Show plot
         if(show_plot):
-            plt.show()  
+            plt.show() 
 
     # Function saves weights of a given model
     def _save_weights(self, model, epoch, checkpoint_pth):
@@ -249,85 +195,84 @@ class Train():
 
     # Create noise vector(s) for the generator
     # Depending on the generator architecture, the vector needs to come in two different shapes
-    def _create_noise(self, batch_size, latent_vector_size, shape="2D"):
-        if(shape=="4D"):
-            return torch.randn(batch_size, latent_vector_size, 1, 1, device=self.device)
-        elif(shape=="2D"):
+    def _create_noise(self, batch_size, latent_vector_size):
             return torch.randn(batch_size, latent_vector_size, device=self.device)
-        else:
-            return False
         
-    def _train_discriminator(self, real_images, fake_images):
-        # Get batch size
-        batch_size = real_images.size(0)
+    # Function for gradient penalty
+    # Source: https://github.com/EmilienDupont/wgan-gp/blob/master/training.py    
+    # Corrected and improved according to DeepSeek:
+    def _compute_gradient_penalty(self, real_data, fake_data):
+        batch_size = real_data.size(0)
+        # Calculate interpolation
+        alpha = torch.rand(batch_size, 1, 1, 1, device=self.device)
+        interpolated = alpha * real_data + (1 - alpha) * fake_data
+
+        # Disable critic's BN/IN during GP calculation (if any)
+        self.netC.eval()    
+        # Compute critic scores for interpolated data
+        prob_interpolated = self.netC(interpolated)
+        self.netC.train()
+
+        # Calculate gradients of probabilities with respect to examples
+        gradients = torch.autograd.grad(
+            outputs=prob_interpolated,
+            inputs=interpolated,
+            grad_outputs=torch.ones_like(prob_interpolated),
+            create_graph=True,  # Needed for higher-order derivatives
+            # retain_graph=False,  # No need to retain
+            retain_graph=True,  # Optional (only if you reuse the graph later)
+        )[0]
+
+        # Gradients have shape (batch_size, num_channels, img_width, img_height),
+        # so flatten to easily take norm per example in batch
+        gradients = gradients.view(batch_size, -1)
+        # Calculate gradient norm
+        # This value should be close to 1!
+        gradients_norm = gradients.norm(2, dim=1)    
+        # Calculate gradient penalty
+        gradient_penalty = self.gp_weight * ((gradients_norm - 1) ** 2).mean()
+        # assert not torch.isnan(gradient_penalty)
         
-        # Train with all-real batch
-        self.netD.zero_grad()
-        # Generate labels
-        label = torch.full((batch_size,), self.real_label, dtype=torch.float, device=self.device)
-        # Forward pass real batch through D
-        output = self.netD(real_images).view(-1)
-        # Calculate loss on all-real batch
-        errD_real = self.criterion(output, label)
-        # Calculate gradients for D in backward pass
-        errD_real.backward()
-        D_x = output.mean().item()
-
-        ## Train with all-fake batch
-        label.fill_(self.fake_label)
-        # Classify all fake batch with D
-        output = self.netD(fake_images.detach()).view(-1)
-        # Calculate D's loss on the all-fake batch
-        errD_fake = self.criterion(output, label)
-        # Calculate the gradients for this batch, accumulated (summed) with previous gradients
-        errD_fake.backward()
-        D_G_z1 = output.mean().item()
-        # Compute error of D as sum over the fake and the real batches
-        errD = errD_real + errD_fake
-        D_loss = errD.item()
-        # Update D
-        self.optimizerD.step()
-
-        return D_x, D_G_z1, D_loss
+        return gradient_penalty, gradients_norm.mean().item()
+        
+    def _train_critic(self, real_images, fake_images):
+        # Reset gradients
+        self.netC.zero_grad()
+        # Send real and fake batch through critic
+        C_real = self.netC(real_images).mean()
+        C_fake = self.netC(fake_images.detach()).mean()
+        # Claculate gradient penalty
+        gradient_penalty, grad_norm = self._compute_gradient_penalty(real_images, fake_images)
+        # Calculate Wasserstein loss
+        C_loss = C_fake - C_real + gradient_penalty
+        # Backward pass with retained graph
+        C_loss.backward(retain_graph=True)
+        # Update critic
+        self.optimizerC.step()
+        
+        return C_loss.item(), gradient_penalty.item(), grad_norm
     
     def _train_generator(self, fake_images):
-        # Get batch size
-        batch_size = fake_images.size(0)
-
+        # Reset gradients
         self.netG.zero_grad()
-        # Generate labels
-        label = torch.full((batch_size,), self.real_label, dtype=torch.float, device=self.device) # fake labels are real for generator cost
-        # Since we just updated D, perform another forward pass of all-fake batch through D
-        output = self.netD(fake_images).view(-1)
-        # Calculate G's loss based on this output
-        errG = self.criterion(output, label)
-        G_loss = errG.item()
+        # Send fake batch through Critic
+        C_fake = self.netC(fake_images).mean()
+        # Calculate Wasserstein loss: Generator tries to maximize C_fake
+        G_loss = -C_fake
         # Calculate gradients for G
-        errG.backward()
-        D_G_z2 = output.mean().item()
+        G_loss.backward()
         # Update G
         self.optimizerG.step()
 
-        return G_loss, D_G_z2
-    
-    def _train_generator_block(self, batch_size):
-        # Generate batch of latent vectors
-        noise = self._create_noise(batch_size, self.latent_vector_size, shape="4D")
-        # Generate fake image batch with G
-        fake_images = self.netG(noise)
-        # Train generator
-        G_loss, D_G_z2 = self._train_generator(fake_images)
-
-        return G_loss, D_G_z2
+        return G_loss.item()
     
     def create_generator_samples(self, num_samples):
         # Generate batch of latent vectors
-        noise = self._create_noise(num_samples, self.latent_vector_size, shape="4D")
+        noise = self._create_noise(num_samples, self.latent_vector_size)
         # Generate fake image batch with G
         samples_tensors = self.netG(noise)
 
         return samples_tensors
-
 
     #############################################################################################################
     # TRAINING LOOP:
@@ -340,15 +285,10 @@ class Train():
 
         # Based on: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
         # and on: https://neptune.ai/blog/gan-failure-modes
+        # and on: https://agustinus.kristia.de/blog/wasserstein-gan/  
 
         # Metrics for plot history:
-        # - Loss_G: Generator loss calculated as log(D(G(z)))log(D(G(z)))   
-        # - Loss_D: Discriminator loss calculated as the sum of losses for the all real and all fake batches (log(D(x))+log(1−D(G(z)))log(D(x))+log(1−D(G(z))))
-        # - D(x): The average output (across the batch) of the discriminator for the all real batch. This should start close to 1 then 
-        #   theoretically converge to 0.5 when G gets better.
-        # - D(G(z)): average discriminator outputs for the all fake batch. The first number is before D is updated and the second number is after D is updated. 
-        #   These numbers should start near 0 and converge to 0.5 as G gets better.
-        history = {"G_loss": [], "D_loss": [], "D_x": [], "D_G_z1": [], "D_G_z2": []}
+        history = {"G_loss": [], "C_loss": [], "Grad_pen": [], "Grad_norm": []}
 
         print("\nStarting training loop...")
 
@@ -361,73 +301,26 @@ class Train():
             with tqdm(self.dataloader, unit="batch") as tepoch:
                 for step, data in enumerate(tepoch, 0):
 
-                    ############################################
-                    # Generate batches of real and fake images #
-                    ############################################
-
-                    # Get a batch of real images
                     real_images = data[0].to(self.device)
-                    # Get batch size from actual batch (last batch can be smaller!)
                     batch_size = real_images.size(0)
-                    # Generate batch of latent vectors
-                    noise = self._create_noise(batch_size, self.latent_vector_size, shape="4D")
+
+                    #######################
+                    # Train critic #
+                    #######################
+
+                    # critic is supposed to be trained at least 5x more that the generator in WGAN
+                    fake_images = self.create_generator_samples(batch_size)
+                    for _ in range(self.num_crit_training):
+                        C_loss, Grad_pen, Grad_norm = self._train_critic(real_images, fake_images)
+
+                    ###################
+                    # Train Generator #
+                    ###################
+
                     # Generate fake image batch with G
-                    fake_images = self.netG(noise)
-
-                    ###############################################################
-                    # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z))) #
-                    ###############################################################
-
-                    D_x, D_G_z1, D_loss = self._train_discriminator(real_images, fake_images)
-
-                    ###############################################
-                    # (2) Update G network: maximize log(D(G(z))) #
-                    ###############################################
-
-                    G_loss, D_G_z2 = self._train_generator(fake_images)
-
-                    ###############################
-                    # TEST: Train Generator again #
-                    ###############################
-
-                    # Always second and third repeat         -> Train generator 3x
-                    for _ in range(2):
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 0.8 and 1.0      -> Train generator 4x
-                    if(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_1) and (history["G_loss"][-1] < self.max_gen_loss_2)):
-                        G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 1.0 and 1.3      -> Train generator 5x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_2) and (history["G_loss"][-1] < self.max_gen_loss_3)):
-                        for _ in range(2):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 1.3 and 1.6      -> Train generator 6x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_3) and (history["G_loss"][-1] < self.max_gen_loss_4)):
-                        for _ in range(3):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 1.6 and 2.0      -> Train generator 7x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_4) and (history["G_loss"][-1] < self.max_gen_loss_5)):
-                        for _ in range(4):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 2.0 and 2.5      -> Train generator 8x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_5) and (history["G_loss"][-1] < self.max_gen_loss_6)):
-                        for _ in range(5):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 2.5 and 3.0      -> Train generator 9x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_6) and (history["G_loss"][-1] < self.max_gen_loss_7)):
-                        for _ in range(6):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 3.0 and 3.5      -> Train generator 10x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_7) and (history["G_loss"][-1] < self.max_gen_loss_8)):
-                        for _ in range(7):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is between 3.5 and 4.0      -> Train generator 12x
-                    elif(history["G_loss"] and (history["G_loss"][-1] >= self.max_gen_loss_8) and (history["G_loss"][-1] < self.max_gen_loss_9)):
-                        for _ in range(9):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
-                    # If G_loss is bigger than 4.0          -> Train generator 15x
-                    elif(history["G_loss"] and history["G_loss"][-1] >= self.max_gen_loss_9):
-                        for _ in range(12):
-                            G_loss, D_G_z2 = self._train_generator_block(batch_size)
+                    fake_images = self.create_generator_samples(batch_size)
+                    # Train Generator
+                    G_loss = self._train_generator(fake_images)
 
                 ######################
                 # SAVE TRAINING DATA #
@@ -441,7 +334,7 @@ class Train():
                 if((epoch + 1) % self.generate_checkpoints_epochs == 0):
                     self._save_weights(self.netG, (epoch + 1), self.pth_checkpoints)   
 
-                # Prints plot with generator and discriminator losses
+                # Prints plot with generator and critic losses
                 if((epoch + 1) % self.generate_plot_epochs == 0):
                     self._plot_training_losses(
                         history,
@@ -454,14 +347,12 @@ class Train():
             # UPDATE HISTORY #
             ##################
 
-            # Update history every epoch
-            history["D_x"].append(D_x)
-            history["D_G_z1"].append(D_G_z1)
-            history["D_G_z2"].append(D_G_z2)
             history["G_loss"].append(G_loss)
-            history["D_loss"].append(D_loss)
-                    
+            history["C_loss"].append(C_loss) 
+            history["Grad_pen"].append(Grad_pen)
+            history["Grad_norm"].append(Grad_norm)
             # Print history
-            print(f'Loss_D: {D_loss:.4f}, Loss_G: {G_loss:.4f}, D(x): {D_x:.4f}, D(G(z)): {D_G_z1:.4f} / {D_G_z2:.4f}')
-
+            print(f'Loss_C: {C_loss:.4f}, Loss_G: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}')
+            
         print("Training finished!")
+

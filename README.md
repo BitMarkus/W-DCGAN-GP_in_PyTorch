@@ -2,7 +2,7 @@
  
  A GAN (generative adversarial network) using exclusively convolutional layers (DC), Wasserstein loss (W) and gradient penalty (GP).
 
- This GAN is currently optimized for 512x512 px grayscale images. It should also work with RGB images, however, I haven't tested that yet. 
+ This GAN is currently optimized for 512x512 px grayscale images. It also works with RGB images, but number of channels nneds to be adjusted in the settings file. 
 
  There are some program folders, which will be automatically created once the software is started:
  

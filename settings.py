@@ -14,11 +14,13 @@ setting = {
 
     # Generator
     "gen_learning_rate": 0.0001,            # 0.00005 = 5e-5 for RMSprop
-    "gen_chan_per_layer": [512, 256, 256, 128, 128, 64, 64],   # [512, 256, 128, 64, 32, 16, 8][1024, 512, 256, 128, 64, 32, 16][512, 512, 256, 256, 128, 128, 64]
+    "gen_chan_per_layer": [512, 256, 256, 128, 128, 64, 64],
+    # Alternatives: [512, 256, 128, 64, 32, 16, 8][1024, 512, 256, 128, 64, 32, 16][512, 512, 256, 256, 128, 128, 64]   
 
-    # Discriminator
-    "disc_learning_rate": 0.00005,           # 0.00005 = 5e-5 for RMSprop
-    "disc_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],  # [8, 16, 32, 64, 128, 256, 512][16, 32, 64, 128, 256, 512, 1024][64, 128, 128, 256, 256, 512, 512]
+    # Critic
+    "crit_learning_rate": 0.00005,           # 0.00005 = 5e-5 for RMSprop
+    "crit_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],  
+    # Alternatives: [8, 16, 32, 64, 128, 256, 512][16, 32, 64, 128, 256, 512, 1024][64, 128, 128, 256, 256, 512, 512]
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -44,26 +46,14 @@ setting = {
     "generate_checkpoints_epochs": 50,      # Save generator every x epochs in checkpoints folder
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
 
-    # Training generator several times per epoch
-    "max_gen_loss_1": 0.8,
-    "max_gen_loss_2": 1.0,
-    "max_gen_loss_3": 1.3,
-    "max_gen_loss_4": 1.6,
-    "max_gen_loss_5": 2.0,
-    "max_gen_loss_6": 2.5,
-    "max_gen_loss_7": 3.0,
-    "max_gen_loss_8": 3.5,
-    "max_gen_loss_9": 4.0,
-
     # WGAN
-    # Training discriminator more that generator
-    "num_disc_training": 2,                 # 5
+    # Training critic more that generator
+    "num_crit_training": 2,                 # 5
     "gradient_penalty_weight": 10,          # 10
 
     # Paths
     "pth_data_root": "data/",               # Root directory for all datasets
     "pth_data": "data/fibroblasts/",        # Root directory for the current dataset
-    # "pth_data": "data/faces/",            # Root directory for the current dataset
     "pth_samples": "samples/",              # Directory for generated samples during training
     "pth_plots": "plots/",                  # Directory for saving plots
     "pth_checkpoints": "checkpoints/",      # Directory for saving checkpoints

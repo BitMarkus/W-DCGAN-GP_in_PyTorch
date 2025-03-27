@@ -1,19 +1,13 @@
 # https://stackoverflow.com/questions/52839758/matplotlib-and-runtimeerror-main-thread-is-not-in-main-loop
 # https://stackoverflow.com/questions/66541812/kochat-in-use-runtimeerror-main-thread-is-not-in-main-loop
 # https://stackoverflow.com/questions/27147300/matplotlib-tcl-asyncdelete-async-handler-deleted-by-the-wrong-thread
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import os
 from prettytable import PrettyTable
 import torch
 import torchvision.transforms as T
-from PIL import Image
 # Own modules
 import functions as fn
 from settings import setting
-from os import listdir
-from os.path import isfile, join
 
 class Generate():
 
