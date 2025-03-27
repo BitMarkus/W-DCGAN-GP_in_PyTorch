@@ -219,8 +219,7 @@ class Train():
             inputs=interpolated,
             grad_outputs=torch.ones_like(prob_interpolated),
             create_graph=True,  # Needed for higher-order derivatives
-            # retain_graph=False,  # No need to retain
-            retain_graph=True,  # Optional (only if you reuse the graph later)
+            retain_graph=True,  # Needed!
         )[0]
 
         # Gradients have shape (batch_size, num_channels, img_width, img_height),
@@ -244,6 +243,32 @@ class Train():
         # Claculate gradient penalty
         gradient_penalty, grad_norm = self._compute_gradient_penalty(real_images, fake_images)
         # Calculate Wasserstein loss
+        C_loss = C_fake - C_real + gradient_penalty
+        # Backward pass with retained graph
+        C_loss.backward(retain_graph=True)
+        # Update critic
+        self.optimizerC.step()
+        
+        return C_loss.item(), gradient_penalty.item(), grad_norm
+    
+    def _train_critic_with_noise(self, real_images, fake_images, epoch):
+        # Reset gradients
+        self.netC.zero_grad()
+        # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
+        # Linear noise:
+        # noise_std = 0.02
+        # Reduce noise over time (e.g., linear decay):
+        noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
+        # Add Gaussian noise to real and fake images
+        real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
+        fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+        # Send real and fake batch with noise through critic
+        C_real = self.netC(real_images_noisy).mean()
+        C_fake = self.netC(fake_images_noisy).mean()
+        # Claculate gradient penalty
+        # Note: Use original (non-noisy) images for GP to avoid noise interference
+        gradient_penalty, grad_norm = self._compute_gradient_penalty(real_images, fake_images)
+        # Calculate Wasserstein loss-
         C_loss = C_fake - C_real + gradient_penalty
         # Backward pass with retained graph
         C_loss.backward(retain_graph=True)
@@ -311,7 +336,10 @@ class Train():
                     # critic is supposed to be trained at least 5x more that the generator in WGAN
                     fake_images = self.create_generator_samples(batch_size)
                     for _ in range(self.num_crit_training):
-                        C_loss, Grad_pen, Grad_norm = self._train_critic(real_images, fake_images)
+                        # Critic training without noise:
+                        # C_loss, Grad_pen, Grad_norm = self._train_critic(real_images, fake_images)
+                        # Critic training with noise:
+                        C_loss, Grad_pen, Grad_norm = self._train_critic_with_noise(real_images, fake_images, epoch)
 
                     ###################
                     # Train Generator #

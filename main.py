@@ -57,7 +57,7 @@ def main():
     print("\nNumber of parameters for generator:")
     fn.count_parameters(train.netG)
     # Train on dataset
-    # train.train()
+    train.train()
 
     ############################
     # Create Generator Samples #
@@ -65,8 +65,7 @@ def main():
 
     # Create a generate object
     samples = Generate(train)
-    samples(device)
-
+    # samples(device)
 
 if __name__ == "__main__":
     main()
