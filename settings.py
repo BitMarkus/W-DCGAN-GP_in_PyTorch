@@ -13,16 +13,12 @@ setting = {
     "num_epochs": 500, 
 
     # Learning rate (scheduler) parameter:
-    
     # Generator
     "gen_learning_rate": 0.0001,            # 0.00005 = 5e-5 for RMSprop  
     "gen_lrs_eta_min": 0.000001,            # 1e-6, min lr from lrs
-    # "gen_lrs_t_max": 500,                   # <- Should be set to number of epochs 
-
     # Critic
     "crit_learning_rate": 0.00005,           # 0.00005 = 5e-5 for RMSprop
     "crit_lrs_eta_min": 0.000001,            # 1e-6
-    # "crit_lrs_t_max": 500,                   # <- Should be set to number of epochs 
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  

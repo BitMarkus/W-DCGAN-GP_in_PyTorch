@@ -42,11 +42,11 @@ class Train():
         # Learning rate (scheduler) parameters
         # Generator:
         self.gen_learning_rate = setting["gen_learning_rate"]
-        self.gen_lrs_t_max = setting["gen_lrs_t_max"]
-        self.crit_lrs_t_max = setting["crit_lrs_t_max"]
+        self.gen_lrs_t_max = self.num_epochs
+        self.gen_lrs_eta_min = setting["gen_lrs_eta_min"]
         # Critic:
         self.crit_learning_rate = setting["crit_learning_rate"]
-        self.gen_lrs_eta_min = setting["gen_lrs_eta_min"]
+        self.crit_lrs_t_max = self.num_epochs
         self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
 
         # Boolian variable if samples suppose to be generated during training
@@ -86,7 +86,7 @@ class Train():
         # RMSprop: 
         # self.optimizerC = optim.RMSprop(self.netC.parameters(), lr=self.disc_learning_rate)
         # Learning rate scheduler
-        self.schedulerC = optim.lr_scheduler.CosineAnnealingLR(self.optimizerC, T_max=self.num_epochs, eta_min=self.crit_lrs_t_max)
+        self.schedulerC = optim.lr_scheduler.CosineAnnealingLR(self.optimizerC, T_max=self.gen_lrs_t_max, eta_min=self.crit_lrs_t_max)
         
         #############
         # Generator #
@@ -108,7 +108,7 @@ class Train():
         # RMSprop:
         # self.optimizerG = optim.RMSprop(self.netG.parameters(), lr=self.gen_learning_rate)
         # Learning rate scheduler
-        self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, T_max=self.num_epochs, eta_min=self.gen_lrs_t_max)
+        self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, T_max=self.crit_lrs_t_max, eta_min=self.gen_lrs_t_max)
 
     #############################################################################################################
     # METHODS:
