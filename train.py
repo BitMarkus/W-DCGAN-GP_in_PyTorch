@@ -30,17 +30,24 @@ class Train():
         self.latent_vector_size = setting["latent_vector_size"]
         # Number of GPUs available. Use 0 for CPU mode.
         self.num_gpu = setting["num_gpu"]
-        # Learning rate for generator
-        self.gen_learning_rate = setting["gen_learning_rate"]
-        # Learning rate for critic
-        self.crit_learning_rate = setting["crit_learning_rate"]
         # Parameters for optimizer
+
         self.adam_beta_1 = setting["adam_beta_1"]
         self.adam_beta_2 = setting["adam_beta_2"]
         # Training critic more that generator
         self.num_crit_training = setting["num_crit_training"]
         # Gradient penalty
         self.gp_weight = setting["gradient_penalty_weight"]
+
+        # Learning rate (scheduler) parameters
+        # Generator:
+        self.gen_learning_rate = setting["gen_learning_rate"]
+        self.gen_lrs_t_max = setting["gen_lrs_t_max"]
+        self.crit_lrs_t_max = setting["crit_lrs_t_max"]
+        # Critic:
+        self.crit_learning_rate = setting["crit_learning_rate"]
+        self.gen_lrs_eta_min = setting["gen_lrs_eta_min"]
+        self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
 
         # Boolian variable if samples suppose to be generated during training
         self.generate_samples = setting["generate_samples"]
@@ -60,9 +67,9 @@ class Train():
         # Path for saving checkpoints
         self.pth_checkpoints = setting["pth_checkpoints"]
 
-        #################
-        # Create critic #
-        #################
+        ##########
+        # Critic #
+        ##########
 
         self.netC = Critic().to(self.device)
         # Handle multi-GPU if desired
@@ -79,11 +86,11 @@ class Train():
         # RMSprop: 
         # self.optimizerC = optim.RMSprop(self.netC.parameters(), lr=self.disc_learning_rate)
         # Learning rate scheduler
-        self.schedulerC = optim.lr_scheduler.CosineAnnealingLR(self.optimizerC, T_max=self.num_epochs)
+        self.schedulerC = optim.lr_scheduler.CosineAnnealingLR(self.optimizerC, T_max=self.num_epochs, eta_min=self.crit_lrs_t_max)
         
-        ####################
-        # Create generator #
-        ####################       
+        #############
+        # Generator #
+        #############       
 
         # Create the generator network
         self.netG = Generator().to(self.device)
@@ -101,7 +108,7 @@ class Train():
         # RMSprop:
         # self.optimizerG = optim.RMSprop(self.netG.parameters(), lr=self.gen_learning_rate)
         # Learning rate scheduler
-        self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, T_max=self.num_epochs)
+        self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, T_max=self.num_epochs, eta_min=self.gen_lrs_t_max)
 
     #############################################################################################################
     # METHODS:
@@ -395,7 +402,7 @@ class Train():
             history["G_lr"].append(G_lr)
             history["C_lr"].append(C_lr)
             # Print history
-            print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.4f}, G_LR: {G_lr:.4f}')
+            print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
         print("Training finished!")
 
