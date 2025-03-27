@@ -8,17 +8,21 @@ setting = {
     "num_workers": 1,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
-    # Hyperparameter
+    # Training parameters
     "batch_size": 40,                       # Strongly depends on the number of filters!      
     "num_epochs": 500, 
 
-    # Learning rate (scheduler) parameter:
+    # Learning rate (scheduler) parameters for CosineAnnealingWarmRestarts
     # Generator
-    "gen_learning_rate": 0.0001,            # 0.00005 = 5e-5 for RMSprop  
-    "gen_lrs_eta_min": 0.000001,            # 1e-6, min lr from lrs
+    "gen_learning_rate": 0.0001,            # 0.0001
+    "gen_lrs_eta_min": 0.000001,            # Minimum LR to avoid stalling, 1e-6
+    "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
+    "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
     # Critic
-    "crit_learning_rate": 0.00005,           # 0.00005 = 5e-5 for RMSprop
-    "crit_lrs_eta_min": 0.000001,            # 1e-6
+    "crit_learning_rate": 0.00005,          # 0.00005
+    "crit_lrs_eta_min": 0.000001,           # 1e-6
+    "crit_lrs_t_0": 10,                     # 10
+    "crit_lrs_t_mult": 2,                   # 2
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  

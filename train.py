@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torchvision.utils import make_grid
 from datetime import datetime
 from tqdm import tqdm
@@ -42,12 +43,14 @@ class Train():
         # Learning rate (scheduler) parameters
         # Generator:
         self.gen_learning_rate = setting["gen_learning_rate"]
-        self.gen_lrs_t_max = self.num_epochs
+        self.gen_lrs_t_0 = setting["gen_lrs_t_0"]
         self.gen_lrs_eta_min = setting["gen_lrs_eta_min"]
+        self.gen_lrs_t_mult = setting["gen_lrs_t_mult"]
         # Critic:
         self.crit_learning_rate = setting["crit_learning_rate"]
-        self.crit_lrs_t_max = self.num_epochs
+        self.crit_lrs_t_0 = setting["crit_lrs_t_0"]
         self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
+        self.crit_lrs_t_mult = setting["crit_lrs_t_mult"]
 
         # Boolian variable if samples suppose to be generated during training
         self.generate_samples = setting["generate_samples"]
@@ -83,10 +86,13 @@ class Train():
             lr=self.crit_learning_rate, 
             betas=(self.adam_beta_1, self.adam_beta_2)
         )
-        # RMSprop: 
-        # self.optimizerC = optim.RMSprop(self.netC.parameters(), lr=self.disc_learning_rate)
         # Learning rate scheduler
-        self.schedulerC = optim.lr_scheduler.CosineAnnealingLR(self.optimizerC, T_max=self.gen_lrs_t_max, eta_min=self.crit_lrs_t_max)
+        self.schedulerC = CosineAnnealingWarmRestarts(
+            self.optimizerC,
+            T_0=self.crit_lrs_t_0,           
+            T_mult=self.crit_lrs_t_mult,
+            eta_min=self.crit_lrs_eta_min
+        )
         
         #############
         # Generator #
@@ -105,10 +111,13 @@ class Train():
             lr=self.gen_learning_rate,
             betas=(self.adam_beta_1, self.adam_beta_2)
         )
-        # RMSprop:
-        # self.optimizerG = optim.RMSprop(self.netG.parameters(), lr=self.gen_learning_rate)
         # Learning rate scheduler
-        self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, T_max=self.crit_lrs_t_max, eta_min=self.gen_lrs_t_max)
+        self.schedulerG = CosineAnnealingWarmRestarts(
+            self.optimizerG,
+            T_0=self.gen_lrs_t_0,                    
+            T_mult=self.gen_lrs_t_mult,                   
+            eta_min=self.gen_lrs_eta_min
+        )
 
     #############################################################################################################
     # METHODS:
