@@ -71,8 +71,8 @@ class Generator(nn.Module):
                                # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
                                bias=False),
             nn.BatchNorm2d(out_channels),
-            # nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            # nn.ReLU(inplace=True),
 
             # Intermediate layer with no change of image size or channel number
             nn.Conv2d(out_channels, 
@@ -83,8 +83,8 @@ class Generator(nn.Module):
                     # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
                     bias=False), 
             nn.BatchNorm2d(out_channels),
-            # nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            # nn.ReLU(inplace=True),
         )
 
     def _output_block(self, in_channels, out_channels):

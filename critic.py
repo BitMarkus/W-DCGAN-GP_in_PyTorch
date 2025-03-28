@@ -56,9 +56,12 @@ class Critic(nn.Module):
                     out_channels, 
                     kernel_size=self.kernel_size, 
                     stride=self.stride, 
-                    padding=self.padding,)),
+                    padding=self.padding,
+                    # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                    bias=False)),
             # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-            nn.InstanceNorm2d(out_channels, affine=True),
+            # Instead use InstanceNorm without learnable parameters (affine=False)
+            nn.InstanceNorm2d(out_channels, affine=False),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
 
             # Extra convolutional layer with no change of image size or channel number
@@ -67,9 +70,12 @@ class Critic(nn.Module):
                     out_channels, 
                     kernel_size=3, 
                     stride=1, 
-                    padding=1)),
+                    padding=1,
+                    # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                    bias=False)),
             # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-            nn.InstanceNorm2d(out_channels, affine=True),
+            # Instead use InstanceNorm without learnable parameters (affine=False)
+            nn.InstanceNorm2d(out_channels, affine=False),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             )  
 

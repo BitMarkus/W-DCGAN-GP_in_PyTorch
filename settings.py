@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 40,                       # Strongly depends on the number of filters!      
+    "batch_size": 32,                       # Strongly depends on the number of filters!      
     "num_epochs": 500, 
 
     # Learning rate (scheduler) parameters for CosineAnnealingWarmRestarts
