@@ -58,6 +58,7 @@ class Critic(nn.Module):
                     stride=self.stride, 
                     padding=self.padding,)),
             # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+            nn.InstanceNorm2d(out_channels, affine=True),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
 
             # Extra convolutional layer with no change of image size or channel number
@@ -68,6 +69,7 @@ class Critic(nn.Module):
                     stride=1, 
                     padding=1)),
             # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+            nn.InstanceNorm2d(out_channels, affine=True),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             )  
 
