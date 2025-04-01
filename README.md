@@ -37,7 +37,7 @@ project-root/
 
 ## Technical Notes
 - **Gradient Penalty**: λ=10 (default) enforces 1-Lipschitz constraint. Gradient penalty should stay between 0-10, better between 0-1.
-- **LR Scheduling**: Cosine annealing with restarts (T_0=10 epochs)
+- **LR Scheduling**: None, Cosine annealing or cosine annealing with restarts (T_0=10 epochs), Can be set in the settings file.
 - **Monitor**: Gradient norms should stabilize near 1.0
 
 ## Training and image generation

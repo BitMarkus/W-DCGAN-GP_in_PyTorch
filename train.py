@@ -223,14 +223,14 @@ class Train():
         # Show plot
         if(show_plot):
             plt.show() 
-        print(f"> Metrics plot for epoch {epoch} was succsessfully saved in {self.pth_plots}")
+        print(f"Metrics plot for epoch {epoch} was succsessfully saved in {self.pth_plots}")
         return True    
 
     # Function saves weights of a given model
     def _save_weights(self, model, epoch):
         filename = self._get_filename(f"gen_checkpoint_epoch_{epoch}", ".model")
         torch.save(model.state_dict(), self.pth_checkpoints + '/' + filename)
-        print(f"> Checkpoint {filename} for epoch {epoch} was succsessfully saved in {self.pth_checkpoints}")
+        print(f"Checkpoint {filename} for epoch {epoch} was succsessfully saved in {self.pth_checkpoints}")
         return True  
 
     # Plots a grid of sample images during training
@@ -258,7 +258,7 @@ class Train():
         # Show plot
         if(show_plot):
             plt.show() 
-        print(f"> Sample images for epoch {epoch} were succsessfully saved in {self.pth_samples}")
+        print(f"Sample images for epoch {epoch} were succsessfully saved in {self.pth_samples}")
         return True  
 
     # Create noise vector(s) for the generator
@@ -322,9 +322,9 @@ class Train():
     def _train_critic_with_noise(self, real_images, fake_images, epoch):
         # Reset gradients
         self.netC.zero_grad()
-        # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
         # Linear noise:
         # noise_std = 0.02
+        # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
         # Reduce noise over time (e.g., linear decay):
         noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
         # Add Gaussian noise to real and fake images
@@ -388,7 +388,7 @@ class Train():
         # For each epoch
         for epoch in range(self.num_epochs):
 
-            print(f'>> Epoch [{epoch+1}/{self.num_epochs}]:')
+            print(f'\n>> Epoch [{epoch+1}/{self.num_epochs}]:')
 
             # For each batch in the dataloader
             with tqdm(self.dataloader, unit="batch") as tepoch:
@@ -455,6 +455,10 @@ class Train():
             # UPDATE HISTORY #
             ##################
 
+            # TO DO:
+            # Monitor and plot the Wasserstein Distance:
+            # wasserstein_distance = history["C_loss"] - history["G_loss"]
+
             history["G_loss"].append(G_loss)
             history["C_loss"].append(C_loss) 
             history["Grad_pen"].append(Grad_pen)
@@ -462,7 +466,7 @@ class Train():
             history["G_lr"].append(G_lr)
             history["C_lr"].append(C_lr)
             # Print history
-            print(f'> C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
+            print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
         print("Training finished!")
 
