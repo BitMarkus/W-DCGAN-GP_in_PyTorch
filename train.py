@@ -180,50 +180,60 @@ class Train():
         filename = f'{current_datetime}_{name}{extension}'
         return filename
 
-    # Prints plot with generator and critic losses after training
-    def _plot_training_losses(
-            self, 
-            history,
-            plot_path,
-            epoch, 
-            show_plot=True, 
-            save_plot=True
-            ):
-        # losses versus training iterations
-        plt.figure(figsize=(10,5))
-        plt.title("Generator and Critic Loss During Training")
-        plt.plot(history["G_loss"], label="G loss")
-        plt.plot(history["C_loss"], label="C loss")  
-        plt.plot(history["Grad_pen"], label="Grad pen")  
-        plt.plot(history["Grad_norm"], label="Grad norm")           
-        plt.xlabel("Epochs")
-        plt.ylabel("Loss")
+    # Plots accuracy, loss, and learning rate after training
+    def _plot_metrics(self, 
+                    history, 
+                    epoch, 
+                    show_plot=False, 
+                    save_plot=True):
+        # Number of epochs
+        epochs_range = range(1, len(history["G_loss"]) + 1)
+        # Draw plots (b, h)
+        plt.figure(figsize=(10, 10))
+        # INFO: plt.subplot(rows, colums, plot position)
+        # Generator and Critic loss
+        plt.subplot(2, 2, 1)
         # plt.ylim(-400, 400)
-        plt.legend()
+        plt.plot(epochs_range, history["G_loss"], label='G loss', color='green')
+        plt.plot(epochs_range, history["C_loss"], label='C loss', color='red')
+        plt.legend(loc='upper right')
+        plt.title(f'Loss')
+        # Learning rates
+        plt.subplot(2, 2, 2)
+        # convert y-axis to Logarithmic scale
+        # plt.yscale("log")
+        plt.plot(epochs_range, history["G_lr"], label='G lr', color='green')
+        plt.plot(epochs_range, history["C_lr"], label='C lr', color='red')
+        plt.legend(loc='upper right')
+        plt.title('Learning Rate')  
+        # Gradient penalty
+        plt.subplot(2, 2, 3)
+        plt.plot(epochs_range, history["Grad_pen"], label='Grad pen', color='blue')
+        plt.title('Gradiant penalty')  
+        # Gradient norm
+        plt.subplot(2, 2, 4)
+        plt.plot(epochs_range, history["Grad_norm"], label='Grad norm', color='blue')
+        plt.title('Gradient norm')      
         plt.tight_layout()
         # Save plot
         if(save_plot):
-            filename = self._get_filename(f"Losses_epoch_{epoch}", ".png")
-            plt.savefig(str(plot_path) + '/' + filename, bbox_inches='tight') 
+            filename = self._get_filename(f"Metrics_epoch_{epoch}", ".png")
+            plt.savefig(self.pth_plots + '/' + filename, bbox_inches='tight') 
             plt.close()
         # Show plot
         if(show_plot):
             plt.show() 
+        print(f"> Metrics plot for epoch {epoch} was succsessfully saved in {self.pth_plots}")
+        return True    
 
     # Function saves weights of a given model
-    def _save_weights(self, model, epoch, checkpoint_pth):
+    def _save_weights(self, model, epoch):
         filename = self._get_filename(f"gen_checkpoint_epoch_{epoch}", ".model")
-        torch.save(model.state_dict(), str(checkpoint_pth) + '/' + filename)
+        torch.save(model.state_dict(), self.pth_checkpoints + '/' + filename)
+        print(f"> Checkpoint {filename} for epoch {epoch} was succsessfully saved in {self.pth_checkpoints}")
+        return True  
 
-    # Plots a grid of images from a given tensor.
-    # The function first scales the image tensor to the range [0, 1]. It then detaches the tensor from the computation
-    # graph and moves it to the CPU if it's not already there. After that, it creates a grid of images and plots the grid.
-    # Args:
-    # image_tensor (torch.Tensor): A 4D tensor containing the images. The tensor is expected to be in the shape (batch_size, channels, height, width).
-    # num_images (int, optional): The number of images to include in the grid. Default is 25.
-    # nrow (int, optional): Number of images displayed in each row of the grid. The final grid size is (num_images // nrow, nrow). Default is 5.
-    # show (bool, optional): Determines if the plot should be shown. Default is True.
-    # Returns: None. The function outputs a plot of a grid of images.
+    # Plots a grid of sample images during training
     def _plot_sample_images(self, 
                             image_tensor, 
                             pth_samples, 
@@ -248,6 +258,8 @@ class Train():
         # Show plot
         if(show_plot):
             plt.show() 
+        print(f"> Sample images for epoch {epoch} were succsessfully saved in {self.pth_samples}")
+        return True  
 
     # Create noise vector(s) for the generator
     # Depending on the generator architecture, the vector needs to come in two different shapes
@@ -429,16 +441,15 @@ class Train():
 
                 # Save checkpoints
                 if((epoch + 1) % self.generate_checkpoints_epochs == 0):
-                    self._save_weights(self.netG, (epoch + 1), self.pth_checkpoints)   
+                    self._save_weights(self.netG, (epoch + 1))   
 
                 # Prints plot with generator and critic losses
                 if((epoch + 1) % self.generate_plot_epochs == 0):
-                    self._plot_training_losses(
-                        history,
-                        self.pth_plots,
-                        (epoch + 1),
-                        show_plot=False, 
-                        save_plot=True)
+                    self._plot_metrics(
+                            history,
+                            (epoch + 1),
+                            show_plot=False, 
+                            save_plot=True)
                     
             ##################
             # UPDATE HISTORY #
