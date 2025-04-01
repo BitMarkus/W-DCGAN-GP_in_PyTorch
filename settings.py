@@ -14,8 +14,8 @@ setting = {
 
     # Learning rate (scheduler) parameters
     "use_lr_scheduler": True,
-    "use_cosine_ann": True,
-    "use_cosine_ann_wr": False,
+    "use_cosine_ann": True,                 # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
+    "use_cosine_ann_wr": False,             # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
     # GENERATOR:
     "gen_learning_rate": 0.0001,            # 1e-4
     # CosineAnnealingWarmRestarts:
@@ -51,11 +51,16 @@ setting = {
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
 
     # Sample and plot generation
+    # Training samples:
     "generate_samples": True,
     "num_sample_images": 9,                 # Number of images, which will be saved during training as examples
     "num_rows_sample_images": 3,            # Number of rows for sample image display
     "generate_samples_epochs": 1,           # Save sample images every x epochs in samples folder
+    # Checkpoints:
+    "generate_checkpoints": True,
     "generate_checkpoints_epochs": 50,      # Save generator every x epochs in checkpoints folder
+    # Metrics plot
+    "generate_plots": True,
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
 
     # WGAN

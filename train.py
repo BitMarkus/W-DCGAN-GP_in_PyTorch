@@ -57,16 +57,16 @@ class Train():
         self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
         self.crit_lrs_t_mult = setting["crit_lrs_t_mult"]
 
-        # Boolian variable if samples suppose to be generated during training
+        # Sample generation during training:
         self.generate_samples = setting["generate_samples"]
-        # Number of samples to visualize the result of the generator
         self.num_sample_images = setting["num_sample_images"]
         self.num_rows_sample_images = setting["num_rows_sample_images"]
-        # Save sample images every x epochs in samples folder
         self.generate_samples_epochs = setting["generate_samples_epochs"]
-        # Save generator every x epochs in checkpoints folder
+        # Checkpoint generation during training
+        self.generate_checkpoints = setting["generate_checkpoints"]
         self.generate_checkpoints_epochs = setting["generate_checkpoints_epochs"]
-        # Save loss plot every x epochs in plots folder
+        # Metrics plot generation during training
+        self.generate_plots = setting["generate_plots"]
         self.generate_plot_epochs = setting["generate_plot_epochs"]
 
         # Path for samples
@@ -440,11 +440,11 @@ class Train():
                     self._plot_sample_images(fake_images, self.pth_samples, (epoch + 1))
 
                 # Save checkpoints
-                if((epoch + 1) % self.generate_checkpoints_epochs == 0):
+                if((epoch + 1) % self.generate_checkpoints_epochs == 0 and self.generate_checkpoints):
                     self._save_weights(self.netG, (epoch + 1))   
 
-                # Prints plot with generator and critic losses
-                if((epoch + 1) % self.generate_plot_epochs == 0):
+                # Plot training metrics
+                if((epoch + 1) % self.generate_plot_epochs == 0 and self.generate_plots):
                     self._plot_metrics(
                             history,
                             (epoch + 1),
@@ -462,7 +462,7 @@ class Train():
             history["G_lr"].append(G_lr)
             history["C_lr"].append(C_lr)
             # Print history
-            print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
+            print(f'> C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
         print("Training finished!")
 

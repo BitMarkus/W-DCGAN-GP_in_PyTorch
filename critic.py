@@ -95,7 +95,7 @@ class Critic(nn.Module):
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             )  
     """
-
+    
     # Improved version according to DeepSeek:
     def _decoder(self):  
         return nn.Sequential(
