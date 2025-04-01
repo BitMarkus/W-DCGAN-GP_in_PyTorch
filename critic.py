@@ -46,10 +46,26 @@ class Critic(nn.Module):
     #############################################################################################################
     # METHODS: 
 
+    def _conv_block(self, in_channels, out_channels):
+        return nn.Sequential(
+            # Strided convolutional layer with spectral normalization
+            nn.utils.spectral_norm(nn.Conv2d(
+                    in_channels, 
+                    out_channels, 
+                    kernel_size=self.kernel_size, 
+                    stride=self.stride, 
+                    padding=self.padding,
+                    # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                    bias=False)),
+            # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+            # Instead use InstanceNorm without learnable parameters (affine=False)
+            nn.InstanceNorm2d(out_channels, affine=False),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            )  
+    """
     # Improved version according to DeepSeek:
     def _conv_block(self, in_channels, out_channels):
         return nn.Sequential(
-                
             # Strided convolutional layer with spectral normalization
             nn.utils.spectral_norm(nn.Conv2d(
                     in_channels, 
@@ -78,6 +94,7 @@ class Critic(nn.Module):
             nn.InstanceNorm2d(out_channels, affine=False),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             )  
+    """
 
     # Improved version according to DeepSeek:
     def _decoder(self):  

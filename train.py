@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision.utils import make_grid
 from datetime import datetime
 from tqdm import tqdm
@@ -41,6 +42,10 @@ class Train():
         self.gp_weight = setting["gradient_penalty_weight"]
 
         # Learning rate (scheduler) parameters
+        self.use_lr_scheduler = setting["use_lr_scheduler"]
+        # Select type of scheduler
+        self.use_cosine_ann = setting["use_cosine_ann"]
+        self.use_cosine_ann_wr = setting["use_cosine_ann_wr"]
         # Generator:
         self.gen_learning_rate = setting["gen_learning_rate"]
         self.gen_lrs_t_0 = setting["gen_lrs_t_0"]
@@ -55,7 +60,8 @@ class Train():
         # Boolian variable if samples suppose to be generated during training
         self.generate_samples = setting["generate_samples"]
         # Number of samples to visualize the result of the generator
-        self.num_samples = setting["num_samples"]
+        self.num_sample_images = setting["num_sample_images"]
+        self.num_rows_sample_images = setting["num_rows_sample_images"]
         # Save sample images every x epochs in samples folder
         self.generate_samples_epochs = setting["generate_samples_epochs"]
         # Save generator every x epochs in checkpoints folder
@@ -86,14 +92,26 @@ class Train():
             lr=self.crit_learning_rate, 
             betas=(self.adam_beta_1, self.adam_beta_2)
         )
+
         # Learning rate scheduler
-        self.schedulerC = CosineAnnealingWarmRestarts(
-            self.optimizerC,
-            T_0=self.crit_lrs_t_0,           
-            T_mult=self.crit_lrs_t_mult,
-            eta_min=self.crit_lrs_eta_min
-        )
-        
+        # CosineAnnealingWarmRestarts:
+        if(self.use_cosine_ann_wr):
+            self.schedulerC = CosineAnnealingWarmRestarts(
+                self.optimizerC,
+                T_0=self.crit_lrs_t_0,           
+                T_mult=self.crit_lrs_t_mult,
+                eta_min=self.crit_lrs_eta_min
+            )
+        # CosineAnnealing:
+        elif(self.use_cosine_ann):
+            self.schedulerC = CosineAnnealingLR(
+                self.optimizerC, 
+                T_max=self.num_epochs
+            )
+        # No LRS:
+        else:
+            self.use_lr_scheduler = False
+
         #############
         # Generator #
         #############       
@@ -111,13 +129,25 @@ class Train():
             lr=self.gen_learning_rate,
             betas=(self.adam_beta_1, self.adam_beta_2)
         )
+
         # Learning rate scheduler
-        self.schedulerG = CosineAnnealingWarmRestarts(
-            self.optimizerG,
-            T_0=self.gen_lrs_t_0,                    
-            T_mult=self.gen_lrs_t_mult,                   
-            eta_min=self.gen_lrs_eta_min
-        )
+        # CosineAnnealingWarmRestarts:
+        if(self.use_cosine_ann_wr):
+            self.schedulerG = CosineAnnealingWarmRestarts(
+                self.optimizerG,
+                T_0=self.gen_lrs_t_0,                    
+                T_mult=self.gen_lrs_t_mult,                   
+                eta_min=self.gen_lrs_eta_min
+            )
+        # CosineAnnealing:
+        elif(self.use_cosine_ann):
+            self.schedulerG = CosineAnnealingLR(
+                self.optimizerG, 
+                T_max=self.num_epochs
+            )
+        # No LRS:
+        else:
+            self.use_lr_scheduler = False
 
     #############################################################################################################
     # METHODS:
@@ -194,24 +224,30 @@ class Train():
     # nrow (int, optional): Number of images displayed in each row of the grid. The final grid size is (num_images // nrow, nrow). Default is 5.
     # show (bool, optional): Determines if the plot should be shown. Default is True.
     # Returns: None. The function outputs a plot of a grid of images.
-    def _plot_images_from_tensor(self, image_tensor, pth_samples, epoch, num_images=2, nrow=2, show=False):
+    def _plot_sample_images(self, 
+                            image_tensor, 
+                            pth_samples, 
+                            epoch, 
+                            show_plot=False, 
+                            save_plot=True):
         # Normalize the image tensor to [0, 1]
         image_tensor = (image_tensor + 1) / 2
         # Detach the tensor from its computation graph and move it to the CPU
         image_unflat = image_tensor.detach().cpu()
         # Create a grid of images using the make_grid function from torchvision.utils
-        image_grid = make_grid(image_unflat[:num_images], nrow=nrow)
-        plt.figure(figsize=(16, 8))
+        image_grid = make_grid(image_unflat[:self.num_sample_images], nrow=self.num_rows_sample_images)
+        plt.figure(figsize=(15, 15))
         # Plot the grid of images
         # The permute() function is used to rearrange the dimensions of the grid for plotting
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
-        # Save images
-        plt.savefig(f"{pth_samples}sample_img_epoch_{epoch}")
-        # Show the plot if the 'show' parameter is True
-        if show:
-            plt.show()
-        else:
+        plt.tight_layout()
+        # Save plot
+        if(save_plot):
+            plt.savefig(f"{pth_samples}sample_img_epoch_{epoch}")
             plt.close()
+        # Show plot
+        if(show_plot):
+            plt.show() 
 
     # Create noise vector(s) for the generator
     # Depending on the generator architecture, the vector needs to come in two different shapes
@@ -374,9 +410,13 @@ class Train():
                 # Update learning rate scheduler #
                 ##################################
 
-                self.schedulerC.step()
+                # Use lr scheduler
+                if(self.use_lr_scheduler):
+                    self.schedulerC.step()
+                    self.schedulerG.step()
+
+                # Get last learning rate value
                 C_lr = self.schedulerC.get_last_lr()[0]
-                self.schedulerG.step()
                 G_lr = self.schedulerG.get_last_lr()[0]
 
                 ######################
@@ -385,7 +425,7 @@ class Train():
 
                 # Generate fake samples
                 if((epoch + 1) % self.generate_samples_epochs == 0 and self.generate_samples):
-                    self._plot_images_from_tensor(fake_images, self.pth_samples, (epoch + 1))
+                    self._plot_sample_images(fake_images, self.pth_samples, (epoch + 1))
 
                 # Save checkpoints
                 if((epoch + 1) % self.generate_checkpoints_epochs == 0):
