@@ -24,6 +24,7 @@ Place images in data/your_dataset/ (subfolder required, e.g., data/fibroblasts/w
 Edit settings.py
 
 ## Directory Structure
+All necessary program folders will be created once the program is started for the first time.
 <pre>
 project-root/
 ├── checkpoints/       <em># Generator snapshots</em>

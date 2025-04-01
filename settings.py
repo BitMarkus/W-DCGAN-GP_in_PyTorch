@@ -10,7 +10,7 @@ setting = {
  
     # Training parameters
     "batch_size": 128,                       # Strongly depends on the number of filters!      
-    "num_epochs": 100, 
+    "num_epochs": 1000, 
 
     # Learning rate (scheduler) parameters
     "use_lr_scheduler": True,
@@ -65,7 +65,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 2,                 # 2
+    "num_crit_training": 3,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths
