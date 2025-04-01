@@ -1,16 +1,47 @@
-# W-DCGAN-GP (in PyTorch)
- 
- A GAN (generative adversarial network) using exclusively convolutional layers (DC), Wasserstein loss (W) and gradient penalty (GP).
+# Wasserstein DCGAN with Gradient Penalty (WGAN-GP)
 
- This GAN is currently optimized for 512x512 px grayscale images. It also works with RGB images, but number of channels nneds to be adjusted in the settings file. 
+A PyTorch implementation of a Deep Convolutional GAN (DCGAN) with Wasserstein loss and Gradient Penalty, optimized for high-resolution grayscale/RGB image generation.
 
- There are some program folders, which will be automatically created once the software is started:
- 
- - checkpoints/: It is possible to regularly save generator checkpoints during training. The frequency of the savings can be adjusted in settings file under "generate_checkpoints_epochs".
- - data/: This folder is for the training images. The folder can contain several tarining sets. The path to the training set can be set in the settings file under "pth_data". Currently it is set to "data/fibroblasts/". Please note that this folder needs to contain another folder for the images! An example would be "data/fibroblasts/wt/".
- - plots/: In this folder training plots will be saved. The plots will track Generator loss, Discriminator loss, and gradient penalty. The frequency of the savings can be set in the settings file under "generate_plot_epochs".
- - samples/: Here, sample images are saved during training to keep track of the progress. The frequency, in which the images are saved, can be set in the settings file under "generate_samples_epochs". Currently a set of two images are generated. It is planned to make this adjustable.
+## Key Features
+- **Wasserstein Loss (WGAN)**: Stable training via Earth-Mover distance
+- **Gradient Penalty (GP)**: Replaces weight clipping for better convergence
+- **512×512 px Support**: Designed for high-res grayscale/RGB images
+- **Training Monitoring**: Tracks losses, gradients, and sample quality
 
- It is planned to implement different GAN versions, which can be choosen in the settings file. 
+## Why WGAN-GP?
+Traditional GANs suffer from mode collapse and unstable training. This implementation addresses these issues by:
+- **Wasserstein Loss**: Provides meaningful loss metrics correlating with generation quality.
+- **Gradient Penalty**: Ensures the critic (discriminator) stays within Lipschitz constraints, avoiding vanishing/exploding gradients.
+- **Architecture**: Pure convolutional networks (no fully connected layers) for spatial feature preservation.
 
- Also a simple console menu should be implemented soon.
+## Reference: 
+Improved Training of Wasserstein GANs (Gulrajani et al., 2017).
+
+## Quick Start
+1. Prepare Data
+Place images in data/your_dataset/ (subfolder required, e.g., data/fibroblasts/wt/)
+2. Configure Settings
+Edit settings.py
+
+## Directory Structure
+The program folders will be automatically created once the software is started for the first time:
+├── checkpoints/       # Generator snapshots
+├── data/              # Training images (subfolder required)
+├── plots/             # Loss curves and metrics
+└── samples/           # Generated images (3×3 grid default)
+
+## Technical Notes
+- **Gradient Penalty**: λ=10 (default) enforces 1-Lipschitz constraint. Gradient penalty should stay between 0-10, better between 0-1.
+- **LR Scheduling**: Cosine annealing with restarts (T_0=10 epochs)
+- **Monitor**: Gradient norms should stabilize near 1.0
+
+## Training and image generation
+Currently there is no console menu included. Uncomment the lines "train.train()" or "samples(device)" for training or image generation based on an existing checkpoint.
+
+
+
+
+
+
+
+
