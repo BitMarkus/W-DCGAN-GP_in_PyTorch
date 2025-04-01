@@ -24,11 +24,15 @@ Place images in data/your_dataset/ (subfolder required, e.g., data/fibroblasts/w
 Edit settings.py
 
 ## Directory Structure
-The program folders will be automatically created once the software is started for the first time:<br>
-├── checkpoints/       # Generator snapshots<br>
-├── data/              # Training images (subfolder required)<br>
-├── plots/             # Loss curves and metrics<br>
-└── samples/           # Generated images (3×3 grid default, see settings)<br>
+<pre>
+project-root/
+├── checkpoints/       <em># Generator snapshots</em>
+├── data/              <em># Training images</em>
+│   └── fibroblasts/   <em># Example dataset</em>
+│       └── wt/        <em># Image subfolder</em>
+├── plots/             <em># Loss curves</em>
+└── samples/           <em># Generated images</em>
+</pre>
 
 ## Technical Notes
 - **Gradient Penalty**: λ=10 (default) enforces 1-Lipschitz constraint. Gradient penalty should stay between 0-10, better between 0-1.
