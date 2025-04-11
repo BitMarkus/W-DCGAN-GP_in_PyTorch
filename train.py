@@ -344,6 +344,46 @@ class Train():
         
         return C_loss.item(), gradient_penalty.item(), grad_norm
     
+    """
+    def _train_critic_label_smoothing(self, real_images, fake_images, epoch):
+        self.netC.zero_grad()
+        
+        # --- 1. NOISE INJECTION ---
+        noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))  # Decaying noise
+        real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
+        fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+        
+        # --- 2. LABEL SMOOTHING ---
+        # Soft labels with randomness
+        real_label = torch.rand(real_images.size(0), 1, device=self.device) * 0.2 + 0.8  # [0.8, 1.0]
+        fake_label = torch.rand(fake_images.size(0), 1, device=self.device) * 0.2  # [0.0, 0.2]
+        
+        with torch.cuda.amp.autocast():
+            # Forward pass (with noisy inputs)
+            C_real = self.netC(real_images_noisy)
+            C_fake = self.netC(fake_images_noisy)
+            
+            # Label-smoothed MSE loss
+            real_loss = torch.mean((C_real - real_label) ** 2)
+            fake_loss = torch.mean((C_fake - fake_label) ** 2)
+            
+            # --- 3. GRADIENT PENALTY (original images, no noise) ---
+            with torch.cuda.amp.autocast(enabled=False):
+                gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                    real_images.float(),  # Use original images (not noisy) for GP
+                    fake_images.float()
+                )
+            
+            C_loss = fake_loss - real_loss + gradient_penalty
+        
+        # Backward pass
+        self.scaler.scale(C_loss).backward(retain_graph=True)
+        self.scaler.step(self.optimizerC)
+        self.scaler.update()
+        
+        return C_loss.item(), gradient_penalty.item(), grad_norm  
+    """
+    
     def _train_critic(self, real_images, fake_images):
         # Reset gradients
         self.netC.zero_grad()        
