@@ -309,39 +309,41 @@ class Train():
         
         return gradient_penalty, gradients_norm.mean().item()
 
-    # Method for critic training
     def _train_critic(self, real_images, fake_images, epoch):
+        # Reset gradients
         self.netC.zero_grad()
-        # 1. NOISE INJECTION:
-        noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))  # Decaying noise
-        real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
-        fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
-        # 2. LABEL SMOOTHING:
-        # Soft labels with randomness
-        real_label = torch.rand(real_images.size(0), 1, device=self.device) * 0.2 + 0.8  # [0.8, 1.0]
-        fake_label = torch.rand(fake_images.size(0), 1, device=self.device) * 0.2  # [0.0, 0.2]
-        # Use Mixed-Precision Training (AMP = Automatic Mixed Precision) 
+
+        # Enable AMP for forward pass
         with torch.cuda.amp.autocast():
-            # Forward pass (with noisy inputs)
-            C_real = self.netC(real_images_noisy)
-            C_fake = self.netC(fake_images_noisy)            
-            # Label-smoothed MSE loss: Uses MSE instead of raw scores for better stability with smoothed labels
-            real_loss = torch.mean((C_real - real_label) ** 2)
-            fake_loss = torch.mean((C_fake - fake_label) ** 2)           
-            # 3. GRADIENT PENALTY (original images, no noise):
+            # Linear noise:
+            # noise_std = 0.02
+            # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
+            # Reduce noise over time (e.g., linear decay):
+            noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
+            # Add Gaussian noise to real and fake images
+            real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
+            fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+            # Send real and fake batch with noise through critic
+            C_real = self.netC(real_images_noisy).mean()
+            C_fake = self.netC(fake_images_noisy).mean()
+            # Claculate gradient penalty
+            # Note: Use original (non-noisy) images for GP to avoid noise interference
+            # Gradient penalty (force float32 for stability)
             with torch.cuda.amp.autocast(enabled=False):
                 gradient_penalty, grad_norm = self._compute_gradient_penalty(
-                    real_images.float(),  # Use original images (not noisy) for GP
+                    real_images.float(),  # Ensure float32 for GP
                     fake_images.float()
-                )           
-            C_loss = fake_loss - real_loss + gradient_penalty        
-        # Backward pass
+                )                
+            # Calculate Wasserstein loss
+            C_loss = C_fake - C_real + gradient_penalty
+        # Backward pass with GradScaler
         self.scaler.scale(C_loss).backward(retain_graph=True)
+        # Update critic
         self.scaler.step(self.optimizerC)
         self.scaler.update()
         
-        return C_loss.item(), gradient_penalty.item(), grad_norm  
-   
+        return C_loss.item(), gradient_penalty.item(), grad_norm
+
     def _train_generator(self, fake_images):
         # Reset gradients
         self.netG.zero_grad()
@@ -471,6 +473,125 @@ class Train():
             
         print("Training finished!")
 
+"""
+def _train_critic(self, real_images, fake_images, epoch):
+    self.netC.zero_grad()
+    
+    #############################
+    # Configurable Components
+    #############################
+    use_noise_injection = setting.get("use_noise_injection", True)
+    use_label_smoothing = setting.get("use_label_smoothing", True)
+    
+    #############################
+    # 1. Noise Injection (Optional)
+    #############################
+    if use_noise_injection:
+        noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
+        real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
+        fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+    else:
+        real_images_transformed = real_images
+        fake_images_transformed = fake_images.detach()
+
+    #############################
+    # 2. Label Smoothing (Optional)
+    #############################
+    batch_size = real_images.size(0)
+    if use_label_smoothing:
+        # Dynamic smoothing - stronger early in training
+        smooth_strength = 0.3 * (1 - epoch/(self.num_epochs*0.8))  # Decreases over 80% of training
+        smooth_strength = max(0.1, smooth_strength)  # Never below 0.1
+        
+        real_label = torch.rand(batch_size, 1, device=self.device) * (0.2 * smooth_strength) + (1 - 0.1 * smooth_strength)
+        fake_label = torch.rand(batch_size, 1, device=self.device) * (0.2 * smooth_strength)
+    else:
+        real_label = torch.ones(batch_size, 1, device=self.device)
+        fake_label = torch.zeros(batch_size, 1, device=self.device)
+
+    #############################
+    # 3. Core Training Logic
+    #############################
+    with torch.cuda.amp.autocast():
+        # Forward pass
+        C_real = self.netC(real_images_transformed)
+        C_fake = self.netC(fake_images_transformed)
+        
+        # Loss calculation
+        real_loss = torch.mean((C_real - real_label) ** 2)
+        fake_loss = torch.mean((C_fake - fake_label) ** 2)
+        
+        # Gradient penalty (always uses original images)
+        with torch.cuda.amp.autocast(enabled=False):
+            gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                real_images.float(),
+                fake_images.float()
+            )
+        
+        C_loss = fake_loss - real_loss + gradient_penalty
+    
+    #############################
+    # 4. Backward Pass
+    #############################
+    self.scaler.scale(C_loss).backward(retain_graph=True)
+    self.scaler.step(self.optimizerC)
+    self.scaler.update()
+    
+    # Debug logging
+    if epoch % 10 == 0:
+        print(f"\n[Debug] Noise: {'ON' if use_noise_injection else 'OFF'} (std={noise_std:.4f}) | "
+              f"Label Smooth: {'ON' if use_label_smoothing else 'OFF'} | "
+              f"Real Targets: {real_label.mean():.2f}±{real_label.std():.2f} | "
+              f"Fake Targets: {fake_label.mean():.2f}±{fake_label.std():.2f}")
+    
+    return C_loss.item(), gradient_penalty.item(), grad_norm
+
+setting = {
+    # ... existing settings ...
+    "use_noise_injection": True,      # Toggle noise injection
+    "use_label_smoothing": True,      # Toggle label smoothing
+    
+    # Optional fine-tuning
+    "max_noise_std": 0.05,           # Initial noise level
+    "min_noise_std": 0.01,           # Minimum noise level
+    "label_smooth_max": 0.3,         # Maximum label smoothing strength
+    "label_smooth_min": 0.1          # Minimum label smoothing strength
+}
+"""
+"""
+# Method for critic training
+def _train_critic(self, real_images, fake_images, epoch):
+    self.netC.zero_grad()
+    # 1. NOISE INJECTION:
+    noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))  # Decaying noise
+    real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
+    fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+    # 2. LABEL SMOOTHING:
+    # Soft labels with randomness
+    real_label = torch.rand(real_images.size(0), 1, device=self.device) * 0.2 + 0.8  # [0.8, 1.0]
+    fake_label = torch.rand(fake_images.size(0), 1, device=self.device) * 0.2  # [0.0, 0.2]
+    # Use Mixed-Precision Training (AMP = Automatic Mixed Precision) 
+    with torch.cuda.amp.autocast():
+        # Forward pass (with noisy inputs)
+        C_real = self.netC(real_images_noisy)
+        C_fake = self.netC(fake_images_noisy)            
+        # Label-smoothed MSE loss: Uses MSE instead of raw scores for better stability with smoothed labels
+        real_loss = torch.mean((C_real - real_label) ** 2)
+        fake_loss = torch.mean((C_fake - fake_label) ** 2)           
+        # 3. GRADIENT PENALTY (original images, no noise):
+        with torch.cuda.amp.autocast(enabled=False):
+            gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                real_images.float(),  # Use original images (not noisy) for GP
+                fake_images.float()
+            )           
+        C_loss = fake_loss - real_loss + gradient_penalty        
+    # Backward pass
+    self.scaler.scale(C_loss).backward(retain_graph=True)
+    self.scaler.step(self.optimizerC)
+    self.scaler.update()
+    
+    return C_loss.item(), gradient_penalty.item(), grad_norm  
+"""
 """
 def _train_critic_with_noise(self, real_images, fake_images, epoch):
     # Reset gradients
