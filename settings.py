@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 50,                       # Strongly depends on the number of filters!      
+    "batch_size": 32,                       # Strongly depends on the number of filters!      
     "num_epochs": 1000, 
 
     # Learning rate (scheduler) parameters
@@ -40,20 +40,22 @@ setting = {
     "conv_out_padding": 1, 
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
-    "gen_chan_per_layer": [384, 192, 96, 96, 48, 48, 24],
+    "gen_chan_per_layer": [512, 256, 128, 128, 64, 64, 32],
     # Alternatives: 
     # [1024, 512, 256, 128, 64, 32, 16]
     # [512, 512, 256, 256, 128, 128, 64]
     # [512, 256, 256, 128, 128, 64, 64]
     # [512, 256, 128, 64, 32, 16, 8] 
     # [512, 256, 128, 128, 64, 64, 32]
-    "crit_chan_per_layer": [32, 64, 128, 256, 256, 512, 512], # Keeps ratio at ~1:1.33 (critic:generator)
+    # [384, 192, 96, 96, 48, 48, 24]
+    "crit_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],
     # Alternatives: 
     # [16, 32, 64, 128, 256, 512, 1024]
     # [64, 128, 128, 256, 256, 512, 512]
     # [64, 64, 128, 128, 256, 256, 512]
     # [8, 16, 32, 64, 128, 256, 512]
     # [32, 64, 64, 128, 128, 256, 512]
+    # [32, 64, 128, 256, 256, 512, 512]
 
     # Misc
     "gen_adam_beta_1": 0.5,                 # Beta 1 and 2 parameter for ADAM optimizer
