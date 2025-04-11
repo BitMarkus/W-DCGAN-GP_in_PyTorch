@@ -22,6 +22,7 @@ class Critic(nn.Module):
         self.img_width = setting["img_size"]
         self.img_height = setting["img_size"]
         self.img_channels = setting["img_channels"]
+        self.dropout = setting["crit_dropout"]
 
         # Conv patameters
         self.kernel_size = setting["conv_kernel_size"]
@@ -46,56 +47,39 @@ class Critic(nn.Module):
     #############################################################################################################
     # METHODS: 
 
-    def _conv_block(self, in_channels, out_channels):
-        return nn.Sequential(
-            # Strided convolutional layer with spectral normalization
-            nn.utils.spectral_norm(nn.Conv2d(
-                    in_channels, 
-                    out_channels, 
-                    kernel_size=self.kernel_size, 
-                    stride=self.stride, 
-                    padding=self.padding,
-                    # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
-                    bias=False)),
-            # NO batch normalization when using a Wasserstein GAN with gradient penalty!
-            # Instead use InstanceNorm without learnable parameters (affine=False)
-            nn.InstanceNorm2d(out_channels, affine=False),
-            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            )  
-    """
     # Improved version according to DeepSeek:
     def _conv_block(self, in_channels, out_channels):
         return nn.Sequential(
             # Strided convolutional layer with spectral normalization
-            nn.utils.spectral_norm(nn.Conv2d(
+            nn.Conv2d(
                     in_channels, 
                     out_channels, 
                     kernel_size=self.kernel_size, 
                     stride=self.stride, 
                     padding=self.padding,
                     # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
-                    bias=False)),
+                    bias=False),
             # NO batch normalization when using a Wasserstein GAN with gradient penalty!
             # Instead use InstanceNorm without learnable parameters (affine=False)
             nn.InstanceNorm2d(out_channels, affine=False),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            nn.Dropout2d(self.dropout),
 
             # Extra convolutional layer with no change of image size or channel number
-            nn.utils.spectral_norm(nn.Conv2d(
+            nn.Conv2d(
                     out_channels, 
                     out_channels, 
                     kernel_size=3, 
                     stride=1, 
                     padding=1,
                     # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
-                    bias=False)),
+                    bias=False),
             # NO batch normalization when using a Wasserstein GAN with gradient penalty!
             # Instead use InstanceNorm without learnable parameters (affine=False)
             nn.InstanceNorm2d(out_channels, affine=False),
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             )  
-    """
-    
+
     # Improved version according to DeepSeek:
     def _decoder(self):  
         return nn.Sequential(
@@ -175,3 +159,56 @@ class Critic(nn.Module):
                 x.shape[1] == 1)
 
         return x
+    
+
+"""
+# Improved version according to DeepSeek:
+def _conv_block(self, in_channels, out_channels):
+    return nn.Sequential(
+        # Strided convolutional layer with spectral normalization
+        nn.utils.spectral_norm(nn.Conv2d(
+                in_channels, 
+                out_channels, 
+                kernel_size=self.kernel_size, 
+                stride=self.stride, 
+                padding=self.padding,
+                # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                bias=False)),
+        # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+        # Instead use InstanceNorm without learnable parameters (affine=False)
+        nn.InstanceNorm2d(out_channels, affine=False),
+        nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+
+        # Extra convolutional layer with no change of image size or channel number
+        nn.utils.spectral_norm(nn.Conv2d(
+                out_channels, 
+                out_channels, 
+                kernel_size=3, 
+                stride=1, 
+                padding=1,
+                # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                bias=False)),
+        # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+        # Instead use InstanceNorm without learnable parameters (affine=False)
+        nn.InstanceNorm2d(out_channels, affine=False),
+        nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+        )  
+"""
+"""
+def _conv_block(self, in_channels, out_channels):
+    return nn.Sequential(
+        # Strided convolutional layer with spectral normalization
+        nn.utils.spectral_norm(nn.Conv2d(
+                in_channels, 
+                out_channels, 
+                kernel_size=self.kernel_size, 
+                stride=self.stride, 
+                padding=self.padding,
+                # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                bias=False)),
+        # NO batch normalization when using a Wasserstein GAN with gradient penalty!
+        # Instead use InstanceNorm without learnable parameters (affine=False)
+        nn.InstanceNorm2d(out_channels, affine=False),
+        nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+        )  
+"""

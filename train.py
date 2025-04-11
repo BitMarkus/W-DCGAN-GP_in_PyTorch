@@ -33,9 +33,13 @@ class Train():
         # Number of GPUs available. Use 0 for CPU mode.
         self.num_gpu = setting["num_gpu"]
         # Parameters for optimizer
+        # Generator:
+        self.gen_adam_beta_1 = setting["gen_adam_beta_1"]
+        self.gen_adam_beta_2 = setting["gen_adam_beta_2"]
+        # Critic:
+        self.crit_adam_beta_1 = setting["crit_adam_beta_1"]
+        self.crit_adam_beta_2 = setting["crit_adam_beta_2"]
 
-        self.adam_beta_1 = setting["adam_beta_1"]
-        self.adam_beta_2 = setting["adam_beta_2"]
         # Training critic more that generator
         self.num_crit_training = setting["num_crit_training"]
         # Gradient penalty
@@ -90,7 +94,7 @@ class Train():
         self.optimizerC = optim.Adam(
             self.netC.parameters(), 
             lr=self.crit_learning_rate, 
-            betas=(self.adam_beta_1, self.adam_beta_2)
+            betas=(self.crit_adam_beta_1, self.crit_adam_beta_2)
         )
 
         # Learning rate scheduler
@@ -108,9 +112,10 @@ class Train():
                 self.optimizerC, 
                 T_max=self.num_epochs
             )
-        # No LRS:
+        # Simple linear LRS without update (no LRS gives an error):
         else:
             self.use_lr_scheduler = False
+            self.schedulerC = optim.lr_scheduler.StepLR(self.optimizerC, step_size=5, gamma=0.1)
 
         #############
         # Generator #
@@ -127,7 +132,7 @@ class Train():
         self.optimizerG = optim.Adam(
             self.netG.parameters(), 
             lr=self.gen_learning_rate,
-            betas=(self.adam_beta_1, self.adam_beta_2)
+            betas=(self.gen_adam_beta_1, self.gen_adam_beta_2)
         )
 
         # Learning rate scheduler
@@ -145,9 +150,17 @@ class Train():
                 self.optimizerG, 
                 T_max=self.num_epochs
             )
-        # No LRS:
+        # Simple linear LRS without update:
         else:
             self.use_lr_scheduler = False
+            self.schedulerG = optim.lr_scheduler.StepLR(self.optimizerG, step_size=5, gamma=0.1)
+
+        ###############
+        # Grad scaler #
+        ###############
+        # Mixed-precision training (Automatic Mixed Precision, AMP) speeds up training and reduces 
+        # memory usage by using float16 where possible while maintaining float32 precision for critical operations (e.g., gradient penalties)
+        self.scaler = torch.cuda.amp.GradScaler()
 
     #############################################################################################################
     # METHODS:
@@ -193,7 +206,7 @@ class Train():
         # INFO: plt.subplot(rows, colums, plot position)
         # Generator and Critic loss
         plt.subplot(2, 2, 1)
-        # plt.ylim(-400, 400)
+        plt.ylim(-50, 50)
         plt.plot(epochs_range, history["G_loss"], label='G loss', color='green')
         plt.plot(epochs_range, history["C_loss"], label='C loss', color='red')
         plt.legend(loc='upper right')
@@ -208,10 +221,12 @@ class Train():
         plt.title('Learning Rate')  
         # Gradient penalty
         plt.subplot(2, 2, 3)
+        plt.ylim(-5, 5)
         plt.plot(epochs_range, history["Grad_pen"], label='Grad pen', color='blue')
         plt.title('Gradiant penalty')  
         # Gradient norm
         plt.subplot(2, 2, 4)
+        plt.ylim(-2, 2)
         plt.plot(epochs_range, history["Grad_norm"], label='Grad norm', color='blue')
         plt.title('Gradient norm')      
         plt.tight_layout()
@@ -270,92 +285,103 @@ class Train():
     # Source: https://github.com/EmilienDupont/wgan-gp/blob/master/training.py    
     # Corrected and improved according to DeepSeek:
     def _compute_gradient_penalty(self, real_data, fake_data):
-        batch_size = real_data.size(0)
-        # Calculate interpolation
-        alpha = torch.rand(batch_size, 1, 1, 1, device=self.device)
-        interpolated = alpha * real_data + (1 - alpha) * fake_data
-
-        # Disable critic's BN/IN during GP calculation (if any)
-        self.netC.eval()    
-        # Compute critic scores for interpolated data
-        prob_interpolated = self.netC(interpolated)
-        self.netC.train()
-
-        # Calculate gradients of probabilities with respect to examples
-        gradients = torch.autograd.grad(
-            outputs=prob_interpolated,
-            inputs=interpolated,
-            grad_outputs=torch.ones_like(prob_interpolated),
-            create_graph=True,  # Needed for higher-order derivatives
-            retain_graph=True,  # Needed!
-        )[0]
-
-        # Gradients have shape (batch_size, num_channels, img_width, img_height),
-        # so flatten to easily take norm per example in batch
-        gradients = gradients.view(batch_size, -1)
-        # Calculate gradient norm
-        # This value should be close to 1!
-        gradients_norm = gradients.norm(2, dim=1)    
-        # Calculate gradient penalty
+        # Force float32 for interpolation and gradients
+        real_data = real_data.float()
+        fake_data = fake_data.float()
+        
+        alpha = torch.rand(real_data.size(0), 1, 1, 1, device=self.device)
+        interpolated = (alpha * real_data + (1 - alpha) * fake_data).requires_grad_(True)
+        
+        # Disable AMP for gradient penalty
+        with torch.cuda.amp.autocast(enabled=False):
+            prob_interpolated = self.netC(interpolated.float())
+            gradients = torch.autograd.grad(
+                outputs=prob_interpolated,
+                inputs=interpolated,
+                grad_outputs=torch.ones_like(prob_interpolated),
+                create_graph=True,
+                retain_graph=True,
+            )[0]
+        
+        gradients = gradients.view(real_data.size(0), -1)
+        gradients_norm = gradients.norm(2, dim=1)
         gradient_penalty = self.gp_weight * ((gradients_norm - 1) ** 2).mean()
-        # assert not torch.isnan(gradient_penalty)
         
         return gradient_penalty, gradients_norm.mean().item()
-        
-    def _train_critic(self, real_images, fake_images):
-        # Reset gradients
-        self.netC.zero_grad()
-        # Send real and fake batch through critic
-        C_real = self.netC(real_images).mean()
-        C_fake = self.netC(fake_images.detach()).mean()
-        # Claculate gradient penalty
-        gradient_penalty, grad_norm = self._compute_gradient_penalty(real_images, fake_images)
-        # Calculate Wasserstein loss
-        C_loss = C_fake - C_real + gradient_penalty
-        # Backward pass with retained graph
-        C_loss.backward(retain_graph=True)
-        # Update critic
-        self.optimizerC.step()
-        
-        return C_loss.item(), gradient_penalty.item(), grad_norm
-    
+
     def _train_critic_with_noise(self, real_images, fake_images, epoch):
         # Reset gradients
         self.netC.zero_grad()
-        # Linear noise:
-        # noise_std = 0.02
-        # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
-        # Reduce noise over time (e.g., linear decay):
-        noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
-        # Add Gaussian noise to real and fake images
-        real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
-        fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
-        # Send real and fake batch with noise through critic
-        C_real = self.netC(real_images_noisy).mean()
-        C_fake = self.netC(fake_images_noisy).mean()
-        # Claculate gradient penalty
-        # Note: Use original (non-noisy) images for GP to avoid noise interference
-        gradient_penalty, grad_norm = self._compute_gradient_penalty(real_images, fake_images)
-        # Calculate Wasserstein loss-
-        C_loss = C_fake - C_real + gradient_penalty
-        # Backward pass with retained graph
-        C_loss.backward(retain_graph=True)
+
+        # Enable AMP for forward pass
+        with torch.cuda.amp.autocast():
+            # Linear noise:
+            # noise_std = 0.02
+            # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
+            # Reduce noise over time (e.g., linear decay):
+            noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
+            # Add Gaussian noise to real and fake images
+            real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
+            fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+            # Send real and fake batch with noise through critic
+            C_real = self.netC(real_images_noisy).mean()
+            C_fake = self.netC(fake_images_noisy).mean()
+            # Claculate gradient penalty
+            # Note: Use original (non-noisy) images for GP to avoid noise interference
+            # Gradient penalty (force float32 for stability)
+            with torch.cuda.amp.autocast(enabled=False):
+                gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                    real_images.float(),  # Ensure float32 for GP
+                    fake_images.float()
+                )                
+            # Calculate Wasserstein loss
+            C_loss = C_fake - C_real + gradient_penalty
+        # Backward pass with GradScaler
+        self.scaler.scale(C_loss).backward(retain_graph=True)
         # Update critic
-        self.optimizerC.step()
+        self.scaler.step(self.optimizerC)
+        self.scaler.update()
+        
+        return C_loss.item(), gradient_penalty.item(), grad_norm
+    
+    def _train_critic(self, real_images, fake_images):
+        # Reset gradients
+        self.netC.zero_grad()        
+        # Enable AMP for forward pass (except gradient penalty)
+        with torch.cuda.amp.autocast():
+            # Forward pass (real and fake)
+            C_real = self.netC(real_images).mean()
+            C_fake = self.netC(fake_images.detach()).mean()            
+            # Gradient penalty (force float32)
+            with torch.cuda.amp.autocast(enabled=False):
+                gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                    real_images.float(),  # Explicit float32 for stability
+                    fake_images.float()
+                )           
+            # Calculate loss
+            C_loss = C_fake - C_real + gradient_penalty        
+        # Backward pass with gradient scaling
+        self.scaler.scale(C_loss).backward(retain_graph=True)
+        self.scaler.step(self.optimizerC)
+        self.scaler.update()
         
         return C_loss.item(), gradient_penalty.item(), grad_norm
     
     def _train_generator(self, fake_images):
         # Reset gradients
         self.netG.zero_grad()
-        # Send fake batch through Critic
-        C_fake = self.netC(fake_images).mean()
-        # Calculate Wasserstein loss: Generator tries to maximize C_fake
-        G_loss = -C_fake
-        # Calculate gradients for G
-        G_loss.backward()
-        # Update G
-        self.optimizerG.step()
+
+        # Enable AMP for forward pass
+        with torch.cuda.amp.autocast():
+            # Send fake batch through Critic
+            C_fake = self.netC(fake_images).mean()
+            # Calculate Wasserstein loss: Generator tries to maximize C_fake
+            G_loss = -C_fake
+
+        # Backward pass with GradScaler
+        self.scaler.scale(G_loss).backward()
+        self.scaler.step(self.optimizerG)
+        self.scaler.update()
 
         return G_loss.item()
     
@@ -469,4 +495,42 @@ class Train():
             print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
         print("Training finished!")
+
+
+"""
+def _compute_gradient_penalty(self, real_data, fake_data):
+    batch_size = real_data.size(0)
+    # Calculate interpolation
+    alpha = torch.rand(batch_size, 1, 1, 1, device=self.device)
+    interpolated = alpha * real_data + (1 - alpha) * fake_data
+
+    # Disable critic's BN/IN during GP calculation (if any)
+    self.netC.eval()    
+    # Compute critic scores for interpolated data
+    prob_interpolated = self.netC(interpolated)
+    self.netC.train()
+
+    # Calculate gradients of probabilities with respect to examples
+    gradients = torch.autograd.grad(
+        outputs=prob_interpolated,
+        inputs=interpolated,
+        grad_outputs=torch.ones_like(prob_interpolated),
+        create_graph=True,  # Needed for higher-order derivatives
+        retain_graph=True,  # Needed!
+    )[0]
+
+    # Gradients have shape (batch_size, num_channels, img_width, img_height),
+    # so flatten to easily take norm per example in batch
+    gradients = gradients.view(batch_size, -1)
+    # Calculate gradient norm
+    # This value should be close to 1!
+    gradients_norm = gradients.norm(2, dim=1)    
+    # Calculate gradient penalty
+    gradient_penalty = self.gp_weight * ((gradients_norm - 1) ** 2).mean()
+    # assert not torch.isnan(gradient_penalty)
+    # Clip gradient_penalty to 10
+    gradient_penalty = torch.clamp(gradient_penalty, max=10.0)  
+    
+    return gradient_penalty, gradients_norm.mean().item()
+"""
 

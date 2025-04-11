@@ -57,24 +57,7 @@ class Generator(nn.Module):
             # nn.BatchNorm1d(out_features),
             # nn.LeakyReLU(self.lrelu_alpha, inplace=True),
         ) 
-    """
-    def _deconv_block(self, in_channels, out_channels):
-        return nn.Sequential(
 
-            # Strided convolutional layer
-            nn.ConvTranspose2d(in_channels, 
-                               out_channels, 
-                               kernel_size=self.kernel_size, 
-                               stride=self.stride, 
-                               padding=self.padding, 
-                               output_padding=self.out_padding,
-                               # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
-                               bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
-            # nn.ReLU(inplace=True),
-        )
-    """    
     def _deconv_block(self, in_channels, out_channels):
         return nn.Sequential(
             # Strided convolutional layer
@@ -102,6 +85,24 @@ class Generator(nn.Module):
             nn.LeakyReLU(self.lrelu_alpha, inplace=True),
             # nn.ReLU(inplace=True),
         )
+    """
+    def _deconv_block(self, in_channels, out_channels):
+        return nn.Sequential(
+
+            # Strided convolutional layer
+            nn.ConvTranspose2d(in_channels, 
+                               out_channels, 
+                               kernel_size=self.kernel_size, 
+                               stride=self.stride, 
+                               padding=self.padding, 
+                               output_padding=self.out_padding,
+                               # bias=False if conv/deconv layer is followed by a batch-, layer- group- or instance normalization layer
+                               bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(self.lrelu_alpha, inplace=True),
+            # nn.ReLU(inplace=True),
+        )
+    """    
 
     def _output_block(self, in_channels, out_channels):
         return nn.Sequential(
