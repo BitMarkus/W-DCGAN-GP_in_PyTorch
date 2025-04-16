@@ -9,8 +9,8 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 64,                       # Strongly depends on the number of filters! around 32      
-    "num_epochs": 1000, 
+    "batch_size": 60,                       # Strongly depends on the number of filters! around 32      
+    "num_epochs": 500, 
 
     # Learning rate (scheduler) parameters
     "use_lr_scheduler": False,
@@ -65,6 +65,11 @@ setting = {
     "crit_adam_beta_2": 0.9,
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
     "crit_dropout": 0.2,                    # Dropout for critic
+
+    # Noise injection for critic training
+    "use_noise_injection": True,            # Toggle noise injection
+    "max_noise_std": 0.05,                  # Initial noise level
+    "min_noise_std": 0.01,                  # Minimum noise level
 
     # Sample and plot generation
     # Training samples:

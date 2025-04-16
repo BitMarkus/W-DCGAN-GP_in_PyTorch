@@ -61,6 +61,12 @@ class Train():
         self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
         self.crit_lrs_t_mult = setting["crit_lrs_t_mult"]
 
+        # Critic training
+        # Noise injection
+        self.use_noise_injection = setting["use_noise_injection"]
+        self.max_noise_std = setting["max_noise_std"]
+        self.min_noise_std = setting["min_noise_std"]
+
         # Sample generation during training:
         self.generate_samples = setting["generate_samples"]
         self.num_sample_images = setting["num_sample_images"]
@@ -308,41 +314,41 @@ class Train():
         gradient_penalty = self.gp_weight * ((gradients_norm - 1) ** 2).mean()
         
         return gradient_penalty, gradients_norm.mean().item()
-
+    
     def _train_critic(self, real_images, fake_images, epoch):
-        # Reset gradients
         self.netC.zero_grad()
 
-        # Enable AMP for forward pass
+        # 1. Optional Noise Injection
+        if self.use_noise_injection:
+            # Linear decay from max_noise_std to min_noise_std
+            noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
+            real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
+            fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+        else:
+            real_images_transformed = real_images
+            fake_images_transformed = fake_images.detach()
+
+        # 2. Core Training Logic
         with torch.cuda.amp.autocast():
-            # Linear noise:
-            # noise_std = 0.02
-            # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
-            # Reduce noise over time (e.g., linear decay):
-            noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
-            # Add Gaussian noise to real and fake images
-            real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
-            fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
-            # Send real and fake batch with noise through critic
-            C_real = self.netC(real_images_noisy).mean()
-            C_fake = self.netC(fake_images_noisy).mean()
-            # Claculate gradient penalty
-            # Note: Use original (non-noisy) images for GP to avoid noise interference
-            # Gradient penalty (force float32 for stability)
+            # Forward pass (with or without noise)
+            C_real = self.netC(real_images_transformed).mean()
+            C_fake = self.netC(fake_images_transformed).mean()
+            # Gradient penalty (always uses original images)
             with torch.cuda.amp.autocast(enabled=False):
                 gradient_penalty, grad_norm = self._compute_gradient_penalty(
-                    real_images.float(),  # Ensure float32 for GP
+                    real_images.float(),  # Original images for GP
                     fake_images.float()
-                )                
-            # Calculate Wasserstein loss
-            C_loss = C_fake - C_real + gradient_penalty
-        # Backward pass with GradScaler
+                )           
+            # Wasserstein loss
+            C_loss = C_fake - C_real + gradient_penalty  
+
+        # 3. Backward Pass
         self.scaler.scale(C_loss).backward(retain_graph=True)
-        # Update critic
         self.scaler.step(self.optimizerC)
         self.scaler.update()
         
         return C_loss.item(), gradient_penalty.item(), grad_norm
+    
 
     def _train_generator(self, fake_images):
         # Reset gradients
@@ -407,9 +413,7 @@ class Train():
                     # critic is supposed to be trained at least 5x more that the generator in WGAN
                     fake_images = self.create_generator_samples(batch_size)
                     for _ in range(self.num_crit_training):
-                        # Critic training without noise:
-                        # C_loss, Grad_pen, Grad_norm = self._train_critic(real_images, fake_images)
-                        # Critic training with noise:
+                        # Critic training with noise injection and lable smoothing:
                         C_loss, Grad_pen, Grad_norm = self._train_critic(real_images, fake_images, epoch)
 
                     ###################
@@ -458,10 +462,6 @@ class Train():
             # UPDATE HISTORY #
             ##################
 
-            # TO DO:
-            # Monitor and plot the Wasserstein Distance:
-            # wasserstein_distance = history["C_loss"] - history["G_loss"]
-
             history["G_loss"].append(G_loss)
             history["C_loss"].append(C_loss) 
             history["Grad_pen"].append(Grad_pen)
@@ -473,6 +473,95 @@ class Train():
             
         print("Training finished!")
 
+"""
+def _train_critic(self, real_images, fake_images, epoch):
+    self.netC.zero_grad()
+    
+    # 1. Noise Injection (Optional)
+    if self.use_noise_injection:
+        noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
+        real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
+        fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+    else:
+        real_images_transformed = real_images
+        fake_images_transformed = fake_images.detach()
+
+    # 2. Label Smoothing (Optional)
+    batch_size = real_images.size(0)
+    if self.use_label_smoothing:
+        # Dynamic smoothing - stronger early in training
+        smooth_strength = self.label_smooth_max * (1 - epoch/(self.num_epochs*0.8))  # Decreases over 80% of training
+        smooth_strength = max(self.label_smooth_min, smooth_strength)  # Never below minimum
+        
+        real_label = torch.rand(batch_size, 1, device=self.device) * (0.2 * smooth_strength) + (1 - 0.1 * smooth_strength)
+        fake_label = torch.rand(batch_size, 1, device=self.device) * (0.2 * smooth_strength)
+    else:
+        real_label = torch.ones(batch_size, 1, device=self.device)
+        fake_label = torch.zeros(batch_size, 1, device=self.device)
+
+    # 3. Core Training Logic
+    with torch.cuda.amp.autocast():
+        # Forward pass
+        C_real = self.netC(real_images_transformed)
+        C_fake = self.netC(fake_images_transformed)
+        
+        # Loss calculation
+        real_loss = torch.mean((C_real - real_label) ** 2)  # MSE for real samples
+        fake_loss = torch.mean((C_fake - fake_label) ** 2)  # MSE for fake samples
+        
+        # Gradient penalty (always uses original images)
+        with torch.cuda.amp.autocast(enabled=False):
+            gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                real_images.float(),
+                fake_images.float()
+            )
+        
+        C_loss = fake_loss - real_loss + gradient_penalty   # Total loss
+    
+    # 4. Backward Pass
+    self.scaler.scale(C_loss).backward(retain_graph=True)
+    self.scaler.step(self.optimizerC)
+    self.scaler.update()
+
+    return C_loss.item(), gradient_penalty.item(), grad_norm
+"""
+"""
+def _train_critic(self, real_images, fake_images, epoch):
+    # Reset gradients
+    self.netC.zero_grad()
+
+    # Enable AMP for forward pass
+    with torch.cuda.amp.autocast():
+        # Linear noise:
+        # noise_std = 0.02
+        # Add adaptive noise: Start with 2% noise (adjust based on your data scale)
+        # Reduce noise over time (e.g., linear decay):
+        noise_std = max(0.01, 0.05 * (1 - epoch / self.num_epochs))
+        # Add Gaussian noise to real and fake images
+        real_images_noisy = real_images + noise_std * torch.randn_like(real_images)
+        fake_images_noisy = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+        # Send real and fake batch with noise through critic
+        C_real = self.netC(real_images_noisy).mean()
+        C_fake = self.netC(fake_images_noisy).mean()
+        # Claculate gradient penalty
+        # Note: Use original (non-noisy) images for GP to avoid noise interference
+        # Gradient penalty (force float32 for stability)
+        with torch.cuda.amp.autocast(enabled=False):
+            gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                real_images.float(),  # Ensure float32 for GP
+                fake_images.float()
+            )                
+        # Calculate Wasserstein loss
+        C_loss = C_fake - C_real + gradient_penalty
+    # Backward pass with GradScaler
+    self.scaler.scale(C_loss).backward(retain_graph=True)
+    # Update critic
+    self.scaler.step(self.optimizerC)
+    self.scaler.update()
+    
+    return C_loss.item(), gradient_penalty.item(), grad_norm
+
+"""
 """
 def _train_critic(self, real_images, fake_images, epoch):
     self.netC.zero_grad()
