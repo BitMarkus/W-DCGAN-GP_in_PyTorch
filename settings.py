@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 50,                       # Strongly depends on the number of filters!      
+    "batch_size": 64,                       # Strongly depends on the number of filters! around 32      
     "num_epochs": 1000, 
 
     # Learning rate (scheduler) parameters
@@ -17,13 +17,13 @@ setting = {
     "use_cosine_ann": False,                # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
     "use_cosine_ann_wr": False,             # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
     # GENERATOR:
-    "gen_learning_rate": 0.0002,            # 1e-4 = 0.0001
+    "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
     # CosineAnnealingWarmRestarts:
     "gen_lrs_eta_min": 0.000001,            # Minimum LR to avoid stalling, 1e-6
     "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
     "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
     # CRITIC:
-    "crit_learning_rate": 0.00005,          # 5e-5 = 0.00005
+    "crit_learning_rate": 0.00002,          # 5e-5 = 0.00005
     # CosineAnnealingWarmRestarts:
     "crit_lrs_eta_min": 0.00001,            # 1e-5
     "crit_lrs_t_0": 10,                     # 10
@@ -40,7 +40,7 @@ setting = {
     "conv_out_padding": 1, 
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
-    "gen_chan_per_layer": [512, 256, 128, 128, 64, 64, 32],
+    "gen_chan_per_layer": [512, 256, 128, 64, 32, 16, 8],
     # Alternatives: 
     # [1024, 512, 256, 128, 64, 32, 16]
     # [512, 512, 256, 256, 128, 128, 64]
@@ -48,7 +48,8 @@ setting = {
     # [512, 256, 128, 64, 32, 16, 8] 
     # [512, 256, 128, 128, 64, 64, 32]
     # [384, 192, 96, 96, 48, 48, 24]
-    "crit_chan_per_layer": [32, 64, 64, 128, 128, 256, 512],
+    # According to DeepSeek the Critic should have 1.2–2x the generator’s parameters
+    "crit_chan_per_layer": [32, 64, 128, 128, 256, 256, 512],
     # Alternatives: 
     # [16, 32, 64, 128, 256, 512, 1024]
     # [64, 128, 128, 256, 256, 512, 512]
@@ -73,7 +74,7 @@ setting = {
     "generate_samples_epochs": 1,           # Save sample images every x epochs in samples folder
     # Checkpoints:
     "generate_checkpoints": True,
-    "generate_checkpoints_epochs": 50,      # Save generator every x epochs in checkpoints folder
+    "generate_checkpoints_epochs": 25,      # Save generator every x epochs in checkpoints folder
     # Metrics plot
     "generate_plots": True,
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
@@ -83,9 +84,10 @@ setting = {
     "num_crit_training": 2,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
-    # Paths
+    # Paths 
     "pth_data_root": "data/",               # Root directory for all datasets
     "pth_data": "data/fibroblasts/",        # Root directory for the current dataset
+    # "pth_data": "C:/PyTorch/Datasets/faces/",
     "pth_samples": "samples/",              # Directory for generated samples during training
     "pth_plots": "plots/",                  # Directory for saving plots
     "pth_checkpoints": "checkpoints/",      # Directory for saving checkpoints
