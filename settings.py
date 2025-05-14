@@ -9,12 +9,12 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 60,                       # Strongly depends on the number of filters! around 32      
-    "num_epochs": 500, 
+    "batch_size": 32,                       # Strongly depends on the number of filters! around 32      
+    "num_epochs": 300, 
 
     # Learning rate (scheduler) parameters
-    "use_lr_scheduler": False,
-    "use_cosine_ann": False,                # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
+    "use_lr_scheduler": True,
+    "use_cosine_ann": True,                 # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
     "use_cosine_ann_wr": False,             # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
@@ -34,9 +34,9 @@ setting = {
     "img_size": 512,                        # Spatial size of training images. All images will be resized to this size using a transformer
 
     # Conv parameters
-    "conv_kernel_size": 5,                  # Option 1: 5, 2, 2, (1) -> Seems to work best
+    "conv_kernel_size": 3,                  # Option 1: 5, 2, 2, (1) -> Seems to work best
     "conv_stride": 2,                       # Option 2: 3, 2, 1, (1) -> Most common one! Should be used
-    "conv_padding": 2,                      # Option 3: 4, 2, 1, (0) -> Not so common. Causes asymetries
+    "conv_padding": 1,                      # Option 3: 4, 2, 1, (0) -> Not so common. Causes asymetries
     "conv_out_padding": 1, 
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
@@ -49,7 +49,7 @@ setting = {
     # [512, 256, 128, 128, 64, 64, 32]
     # [384, 192, 96, 96, 48, 48, 24]
     # According to DeepSeek the Critic should have 1.2–2x the generator’s parameters
-    "crit_chan_per_layer": [32, 64, 128, 128, 256, 256, 512],
+    "crit_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],
     # Alternatives: 
     # [16, 32, 64, 128, 256, 512, 1024]
     # [64, 128, 128, 256, 256, 512, 512]
