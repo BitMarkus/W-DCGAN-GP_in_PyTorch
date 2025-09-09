@@ -64,7 +64,7 @@ def main():
     ############################
 
     # Create a generate object
-    samples = Generate(train)
+    # samples = Generate(train)
     # samples(device)
 
 if __name__ == "__main__":

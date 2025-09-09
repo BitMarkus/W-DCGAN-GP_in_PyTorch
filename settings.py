@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 32,                       # Strongly depends on the number of filters! around 32      
+    "batch_size": 28,                       # Strongly depends on the number of filters! around 32      
     "num_epochs": 300, 
 
     # Learning rate (scheduler) parameters
@@ -48,8 +48,8 @@ setting = {
     # [512, 256, 128, 64, 32, 16, 8] 
     # [512, 256, 128, 128, 64, 64, 32]
     # [384, 192, 96, 96, 48, 48, 24]
-    # According to DeepSeek the Critic should have 1.2–2x the generator’s parameters
-    "crit_chan_per_layer": [64, 64, 128, 128, 256, 256, 512],
+    # The Critic should have 1.2–2.5x the generator’s parameters
+    "crit_chan_per_layer": [64, 128, 256, 256, 512, 512, 512],   # before: [64, 64, 128, 128, 256, 256, 512]
     # Alternatives: 
     # [16, 32, 64, 128, 256, 512, 1024]
     # [64, 128, 128, 256, 256, 512, 512]
@@ -86,7 +86,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 2,                 # 2
+    "num_crit_training": 4,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 
