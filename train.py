@@ -256,32 +256,52 @@ class Train():
         return True  
 
     # Plots a grid of sample images during training
-    def _plot_sample_images(self, 
-                            image_tensor, 
-                            pth_samples, 
-                            epoch, 
-                            show_plot=False, 
-                            save_plot=True):
+    # As the last batch can contain less images than the batch size, 
+    # the number of images can be less than the setting parameter "num_sample_images"
+    # The grid will be adjusted accordingly
+    def _plot_sample_images(self, image_tensor, pth_samples, epoch, show_plot=False, save_plot=True):
         # Normalize the image tensor to [0, 1]
         image_tensor = (image_tensor + 1) / 2
         # Detach the tensor from its computation graph and move it to the CPU
         image_unflat = image_tensor.detach().cpu()
-        # Create a grid of images using the make_grid function from torchvision.utils
-        image_grid = make_grid(image_unflat[:self.num_sample_images], nrow=self.num_rows_sample_images)
-        plt.figure(figsize=(15, 15))
-        # Plot the grid of images
-        # The permute() function is used to rearrange the dimensions of the grid for plotting
+        
+        # Get the actual number of available images
+        num_available_images = image_unflat.size(0)
+        num_to_display = min(self.num_sample_images, num_available_images)
+        
+        # Calculate the optimal grid layout
+        nrow = min(self.num_rows_sample_images, num_to_display)
+        ncol = (num_to_display + nrow - 1) // nrow  # Ceiling division
+        
+        # Calculate dynamic figure size based on the actual grid dimensions
+        # Base size per image cell, adjust these multipliers as needed
+        cell_width = 5  # inches per column
+        cell_height = 5  # inches per row
+        
+        fig_width = ncol * cell_width
+        fig_height = nrow * cell_height
+        
+        # Create a grid of images
+        image_grid = make_grid(image_unflat[:num_to_display], nrow=nrow)
+        
+        # Create figure with dynamic size
+        plt.figure(figsize=(fig_width, fig_height))
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
-        plt.tight_layout()
-        # Save plot
-        if(save_plot):
-            plt.savefig(f"{pth_samples}sample_img_epoch_{epoch}")
+        
+        # Remove axes and padding
+        plt.axis('off')
+        plt.tight_layout(pad=0)
+        
+        if save_plot:
+            plt.savefig(f"{pth_samples}sample_img_epoch_{epoch}", bbox_inches='tight', pad_inches=0)
             plt.close()
-        # Show plot
-        if(show_plot):
-            plt.show() 
-        print(f"Sample images for epoch {epoch} were succsessfully saved in {self.pth_samples}")
-        return True  
+        
+        if show_plot:
+            plt.show()
+        
+        print(f"Sample images for epoch {epoch} were successfully saved in {pth_samples}")
+        # print(f"Displayed {num_to_display} images in {nrow}×{ncol} grid (requested {self.num_sample_images} in {self.num_rows_sample_images} rows)")
+        return True
 
     # Create noise vector(s) for the generator
     # Depending on the generator architecture, the vector needs to come in two different shapes

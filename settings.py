@@ -74,7 +74,7 @@ setting = {
     # Sample and plot generation
     # Training samples:
     "generate_samples": True,
-    "num_sample_images": 9,                 # Number of images, which will be saved during training as examples
+    "num_sample_images": 9,                 # Number of images, which will be saved during training as examples. Can be less as the last batch can contain less images!
     "num_rows_sample_images": 3,            # Number of rows for sample image display
     "generate_samples_epochs": 1,           # Save sample images every x epochs in samples folder
     # Checkpoints:
@@ -86,7 +86,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 4,                 # 2
+    "num_crit_training": 1,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 
