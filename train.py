@@ -3,6 +3,7 @@ from torch import nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.cuda.amp import autocast, GradScaler
 from torchvision.utils import make_grid
 from datetime import datetime
 from tqdm import tqdm
@@ -410,11 +411,24 @@ class Train():
                     # Train Critic #
                     ################
 
+                    # Track average metrics across all critic updates
+                    C_loss_total, Grad_pen_total, Grad_norm_total = 0, 0, 0
+                    
                     # critic is supposed to be trained at least 5x more that the generator in WGAN
-                    fake_images = self.create_generator_samples(batch_size)
                     for _ in range(self.num_crit_training):
+                        # New fake images each time
+                        fake_images = self.create_generator_samples(batch_size)
                         # Critic training with noise injection and lable smoothing:
                         C_loss, Grad_pen, Grad_norm = self._train_critic(real_images, fake_images, epoch)
+                        # Accumulate metrics
+                        C_loss_total += C_loss
+                        Grad_pen_total += Grad_pen
+                        Grad_norm_total += Grad_norm
+                    
+                    # Calculate averages for critic metrics
+                    C_loss_avg = C_loss_total / self.num_crit_training
+                    Grad_pen_avg = Grad_pen_total / self.num_crit_training
+                    Grad_norm_avg = Grad_norm_total / self.num_crit_training
 
                     ###################
                     # Train Generator #
@@ -463,15 +477,14 @@ class Train():
             ##################
 
             history["G_loss"].append(G_loss)
-            history["C_loss"].append(C_loss) 
-            history["Grad_pen"].append(Grad_pen)
-            history["Grad_norm"].append(Grad_norm)
+            history["C_loss"].append(C_loss_avg) 
+            history["Grad_pen"].append(Grad_pen_avg)
+            history["Grad_norm"].append(Grad_norm_avg)
             history["G_lr"].append(G_lr)
             history["C_lr"].append(C_lr)
             # Print history
-            print(f'C_Loss: {C_loss:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen:.4f}, Grad_norm: {Grad_norm:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
+            print(f'C_Loss: {C_loss_avg:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen_avg:.4f}, Grad_norm: {Grad_norm_avg:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
         print("Training finished!")
-
 
 
