@@ -117,7 +117,7 @@ class Critic(nn.Module):
         x = F.leaky_relu(x, self.lrelu_alpha, inplace=True) # Apply activation after addition
         return x
 
-    # Improved version according to DeepSeek:
+    # Improved version:
     def _decoder(self):
         return nn.Sequential(
             # Adaptive Pooling: Unlike standard pooling (e.g., AvgPool2d), you specify the output size (e.g., (H, W), here: (1, 1)),
@@ -137,14 +137,9 @@ class Critic(nn.Module):
                 x.shape[2] == self.img_height and
                 x.shape[3] == self.img_width)
 
-        # Handle initial projection if needed
-        identity_init = x
-        identity_init = self.initial_skip(identity_init)
-
         # Convolutional blocks:
         # First block is special because it takes the raw image input
         x = self._forward_res_block(x, self.conv_block_1)
-        x = x + identity_init # Add initial skip connection after the first block
         assert (x.shape[0] <= self.batch_size and
                 x.shape[1] == self.crit_chan_per_layer[0] and
                 x.shape[2] == 256 and

@@ -86,13 +86,12 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 1,                 # 2
+    "num_crit_training": 4,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 
     "pth_data_root": "data/",               # Root directory for all datasets
     "pth_data": "data/fibroblasts/",        # Root directory for the current dataset
-    # "pth_data": "C:/PyTorch/Datasets/faces/",
     "pth_samples": "samples/",              # Directory for generated samples during training
     "pth_plots": "plots/",                  # Directory for saving plots
     "pth_checkpoints": "checkpoints/",      # Directory for saving checkpoints
