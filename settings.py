@@ -16,16 +16,18 @@ setting = {
     "use_lr_scheduler": True,
     "use_cosine_ann": True,                 # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
     "use_cosine_ann_wr": False,             # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
+
     # GENERATOR:
-    "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
+    "gen_learning_rate": 0.00005,            # 2e-4 = 0.0002
     # CosineAnnealingWarmRestarts:
-    "gen_lrs_eta_min": 0.000001,            # Minimum LR to avoid stalling, 1e-6
+    "gen_lrs_eta_min": 0.000005,            # Minimum LR to avoid stalling, 0.000001 = 1e-6
     "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
     "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
+
     # CRITIC:
-    "crit_learning_rate": 0.00002,          # 0.00002
+    "crit_learning_rate": 0.0001,           # 0.00002
     # CosineAnnealingWarmRestarts:
-    "crit_lrs_eta_min": 0.00001,            # 0.00001 = 1e-5 (20% of LR)
+    "crit_lrs_eta_min": 0.00001,            # 0.00001 = 1e-5 (10% of LR)
     "crit_lrs_t_0": 10,                     # 10
     "crit_lrs_t_mult": 2,                   # 2
 
@@ -58,6 +60,43 @@ setting = {
     # [32, 64, 64, 128, 128, 256, 512]
     # [32, 64, 128, 256, 256, 512, 512]
 
+    #################
+    # AUGMENTATIONS #
+    #################
+
+    # Use augmentations
+    "train_use_augment": True, 
+
+    # INTENSITY AUGMENTATIONS:
+    "aug_intense_prob": 0.5,
+    "aug_brightness": 0.2,
+    "aug_contrast": 0.2,
+    "aug_saturation": 0.2, # only for RGB images
+    # Gamma correction
+    # Gamma = 1: No change. The image looks "natural" (linear brightness)
+    # Gamma < 1 (e.g., 0.5): Dark areas get brighter, bright areas stay mostly the same
+    # Gamma > 1 (e.g., 2.0): Bright areas get darker, dark areas stay mostly the same
+    "aug_gamma_prob": 0.4,
+    "aug_gamma_min": 0.7,
+    "aug_gamma_max": 1.3,
+    # OPTICAL AUGMENTATIONS:
+    # Gaussian Blur Parameters
+    # Probability
+    "aug_gauss_prob": 0.3,
+    # Kernel size
+    "aug_gauss_kernel_size": 5,
+    # Sigma: ontrols the "spread" of the blur (how intense/smooth it is)
+    "aug_gauss_sigma_min": 0.1,
+    "aug_gauss_sigma_max": 0.5,
+    # Poisson noise
+    # Probability
+    "aug_poiss_prob": 0.4, 
+    # Controls how much the noise depends on image brightness
+    # Suggested range: 0.01-0.1 (higher = more noise)
+    "aug_poiss_scaling": 0.05,  # 5% of pixel value
+    # Noise Strength: Final noise intensity multiplier
+    "aug_poiss_noise_strength": 0.1,
+
     # Misc
     "gen_adam_beta_1": 0.5,                 # Beta 1 and 2 parameter for ADAM optimizer
     "gen_adam_beta_2": 0.9,
@@ -86,7 +125,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 3,                 # 2
+    "num_crit_training": 5,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 
