@@ -306,7 +306,7 @@ class Train():
             plt.show()
         
         print(f"Sample images for epoch {epoch} were successfully saved in {pth_samples}")
-        print(f"Displayed {num_to_display} images in {nrow}×{ncol} grid at 300 DPI")
+        # print(f"Displayed {num_to_display} images in {nrow}×{ncol} grid at 300 DPI")
         return True
 
     # Create noise vector(s) for the generator

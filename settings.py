@@ -9,7 +9,7 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 28,                       # Strongly depends on the number of filters! around 32      
+    "batch_size": 32,                       # Strongly depends on the number of filters! around 32      
     "num_epochs": 300, 
 
     # Learning rate (scheduler) parameters
@@ -23,9 +23,9 @@ setting = {
     "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
     "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
     # CRITIC:
-    "crit_learning_rate": 0.00002,          # 5e-5 = 0.00005
+    "crit_learning_rate": 0.00002,          # 0.00002
     # CosineAnnealingWarmRestarts:
-    "crit_lrs_eta_min": 0.00001,            # 1e-5
+    "crit_lrs_eta_min": 0.00001,            # 0.00001 = 1e-5 (20% of LR)
     "crit_lrs_t_0": 10,                     # 10
     "crit_lrs_t_mult": 2,                   # 2
 
@@ -86,7 +86,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 4,                 # 2
+    "num_crit_training": 3,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 
