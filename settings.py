@@ -14,22 +14,24 @@ setting = {
 
     # Learning rate (scheduler) parameters
     "use_lr_scheduler": True,
-    "use_cosine_ann": True,                 # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
-    "use_cosine_ann_wr": False,             # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
 
     # GENERATOR:
-    "gen_learning_rate": 0.00005,            # 2e-4 = 0.0002
+    "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
+    "gen_use_cosine_ann": True,            # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
+    "gen_use_cosine_ann_wr": False,          # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
     # CosineAnnealingWarmRestarts:
-    "gen_lrs_eta_min": 0.000005,            # Minimum LR to avoid stalling, 0.000001 = 1e-6
+    "gen_lrs_eta_min": 0.000001,            # Minimum LR to avoid stalling, 0.000001 = 1e-6
     "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
     "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
 
     # CRITIC:
-    "crit_learning_rate": 0.0001,           # 0.00002
+    "crit_learning_rate": 0.00002,          # 0.00002
+    "crit_use_cosine_ann": False,
+    "crit_use_cosine_ann_wr": True,
     # CosineAnnealingWarmRestarts:
-    "crit_lrs_eta_min": 0.00001,            # 0.00001 = 1e-5 (10% of LR)
+    "crit_lrs_eta_min": 0.000002,           # 0.00001 = 1e-5
     "crit_lrs_t_0": 10,                     # 10
-    "crit_lrs_t_mult": 2,                   # 2
+    "crit_lrs_t_mult": 1,                   # 2
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -125,7 +127,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 5,                 # 2
+    "num_crit_training": 3,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 

@@ -48,16 +48,17 @@ class Train():
 
         # Learning rate (scheduler) parameters
         self.use_lr_scheduler = setting["use_lr_scheduler"]
-        # Select type of scheduler
-        self.use_cosine_ann = setting["use_cosine_ann"]
-        self.use_cosine_ann_wr = setting["use_cosine_ann_wr"]
         # Generator:
         self.gen_learning_rate = setting["gen_learning_rate"]
+        self.gen_use_cosine_ann = setting["gen_use_cosine_ann"]
+        self.gen_use_cosine_ann_wr = setting["gen_use_cosine_ann_wr"]
         self.gen_lrs_t_0 = setting["gen_lrs_t_0"]
         self.gen_lrs_eta_min = setting["gen_lrs_eta_min"]
         self.gen_lrs_t_mult = setting["gen_lrs_t_mult"]
         # Critic:
         self.crit_learning_rate = setting["crit_learning_rate"]
+        self.crit_use_cosine_ann = setting["crit_use_cosine_ann"]
+        self.crit_use_cosine_ann_wr = setting["crit_use_cosine_ann_wr"]
         self.crit_lrs_t_0 = setting["crit_lrs_t_0"]
         self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
         self.crit_lrs_t_mult = setting["crit_lrs_t_mult"]
@@ -106,7 +107,7 @@ class Train():
 
         # Learning rate scheduler
         # CosineAnnealingWarmRestarts:
-        if(self.use_cosine_ann_wr):
+        if(self.crit_use_cosine_ann_wr):
             self.schedulerC = CosineAnnealingWarmRestarts(
                 self.optimizerC,
                 T_0=self.crit_lrs_t_0,           
@@ -114,7 +115,7 @@ class Train():
                 eta_min=self.crit_lrs_eta_min
             )
         # CosineAnnealing:
-        elif(self.use_cosine_ann):
+        elif(self.crit_use_cosine_ann):
             self.schedulerC = CosineAnnealingLR(
                 self.optimizerC, 
                 T_max=self.num_epochs
@@ -144,7 +145,7 @@ class Train():
 
         # Learning rate scheduler
         # CosineAnnealingWarmRestarts:
-        if(self.use_cosine_ann_wr):
+        if(self.gen_use_cosine_ann_wr):
             self.schedulerG = CosineAnnealingWarmRestarts(
                 self.optimizerG,
                 T_0=self.gen_lrs_t_0,                    
@@ -152,7 +153,7 @@ class Train():
                 eta_min=self.gen_lrs_eta_min
             )
         # CosineAnnealing:
-        elif(self.use_cosine_ann):
+        elif(self.gen_use_cosine_ann):
             self.schedulerG = CosineAnnealingLR(
                 self.optimizerG, 
                 T_max=self.num_epochs
@@ -167,6 +168,7 @@ class Train():
         ###############
         # Mixed-precision training (Automatic Mixed Precision, AMP) speeds up training and reduces 
         # memory usage by using float16 where possible while maintaining float32 precision for critical operations (e.g., gradient penalties)
+        
         self.scaler = torch.cuda.amp.GradScaler()
 
     #############################################################################################################
