@@ -12,13 +12,13 @@ setting = {
     "batch_size": 32,                       # Strongly depends on the number of filters! around 32      
     "num_epochs": 300, 
 
-    # Learning rate (scheduler) parameters
-    "use_lr_scheduler": True,
-
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
-    "gen_use_cosine_ann": True,            # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
-    "gen_use_cosine_ann_wr": False,          # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
+    # Use learning rate scheduler
+    "gen_use_lr_scheduler": True,
+    # Learning rate scheduler type (set only one to True!)
+    "gen_use_cosine_ann": True,             # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
+    "gen_use_cosine_ann_wr": False,         # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
     # CosineAnnealingWarmRestarts:
     "gen_lrs_eta_min": 0.000001,            # Minimum LR to avoid stalling, 0.000001 = 1e-6
     "gen_lrs_t_0": 10,                      # Epochs in the first cycle. Smaller values = more frequent restarts
@@ -26,12 +26,15 @@ setting = {
 
     # CRITIC:
     "crit_learning_rate": 0.00002,          # 0.00002
-    "crit_use_cosine_ann": False,
-    "crit_use_cosine_ann_wr": True,
+    # Use learning rate scheduler
+    "crit_use_lr_scheduler": True,
+    # Learning rate scheduler type (set only one to True!)
+    "crit_use_cosine_ann": True,
+    "crit_use_cosine_ann_wr": False,
     # CosineAnnealingWarmRestarts:
-    "crit_lrs_eta_min": 0.000002,           # 0.00001 = 1e-5
+    "crit_lrs_eta_min": 0.00001,            # 0.00001 = 1e-5  (0.000002)
     "crit_lrs_t_0": 10,                     # 10
-    "crit_lrs_t_mult": 1,                   # 2
+    "crit_lrs_t_mult": 1,                   # when 1 the lr resets every crit_lrs_t_0 cycle, when 2 the period doubles after each restart (e.g., 10, 20, 40, 80 epochs...)
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -127,7 +130,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 3,                 # 2
+    "num_crit_training": 2,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 

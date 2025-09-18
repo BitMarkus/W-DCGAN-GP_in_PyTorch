@@ -16,6 +16,17 @@ from settings import setting
 from critic import Critic
 from generator import Generator
 
+# Healthy training signs:
+# C_Loss: oscillates around 0 (slightly negative or positive)  
+# G_Loss: gradually becomes more negative over time
+# Grad_pen: around 0.1-1.0
+# Grad_norm: around 1.0
+
+# Warning signs:
+# C_Lost: consistently very negative ← Critic too strong
+# C_Loss: consistently very positive ← Critic too weak 
+# G_Loss: extremely negative early ← Unstable training
+
 class Train():
 
     #############################################################################################################
@@ -47,8 +58,8 @@ class Train():
         self.gp_weight = setting["gradient_penalty_weight"]
 
         # Learning rate (scheduler) parameters
-        self.use_lr_scheduler = setting["use_lr_scheduler"]
         # Generator:
+        self.gen_use_lr_scheduler = setting["gen_use_lr_scheduler"]
         self.gen_learning_rate = setting["gen_learning_rate"]
         self.gen_use_cosine_ann = setting["gen_use_cosine_ann"]
         self.gen_use_cosine_ann_wr = setting["gen_use_cosine_ann_wr"]
@@ -56,6 +67,7 @@ class Train():
         self.gen_lrs_eta_min = setting["gen_lrs_eta_min"]
         self.gen_lrs_t_mult = setting["gen_lrs_t_mult"]
         # Critic:
+        self.crit_use_lr_scheduler = setting["crit_use_lr_scheduler"]
         self.crit_learning_rate = setting["crit_learning_rate"]
         self.crit_use_cosine_ann = setting["crit_use_cosine_ann"]
         self.crit_use_cosine_ann_wr = setting["crit_use_cosine_ann_wr"]
@@ -215,7 +227,7 @@ class Train():
         # INFO: plt.subplot(rows, colums, plot position)
         # Generator and Critic loss
         plt.subplot(2, 2, 1)
-        plt.ylim(-10, 20)
+        plt.ylim(-20, 30)
         plt.plot(epochs_range, history["G_loss"], label='G loss', color='green')
         plt.plot(epochs_range, history["C_loss"], label='C loss', color='red')
         plt.legend(loc='upper right')
@@ -472,8 +484,9 @@ class Train():
                 ##################################
 
                 # Use lr scheduler
-                if(self.use_lr_scheduler):
+                if(self.crit_use_lr_scheduler):
                     self.schedulerC.step()
+                if(self.gen_use_lr_scheduler):
                     self.schedulerG.step()
 
                 # Get last learning rate value
