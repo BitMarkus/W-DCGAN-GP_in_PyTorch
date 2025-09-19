@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.cuda.amp import autocast, GradScaler
@@ -75,11 +76,15 @@ class Train():
         self.crit_lrs_eta_min = setting["crit_lrs_eta_min"]
         self.crit_lrs_t_mult = setting["crit_lrs_t_mult"]
 
-        # Critic training
+        # Critic training:
         # Noise injection
         self.use_noise_injection = setting["use_noise_injection"]
         self.max_noise_std = setting["max_noise_std"]
         self.min_noise_std = setting["min_noise_std"]
+        # Label smoothing
+        self.use_label_smoothing = setting["use_label_smoothing"]
+        self.smooth_real = setting["smooth_real"]  # Target for real samples
+        self.smooth_fake = setting["smooth_fake"]  # Target for fake samples
 
         # Sample generation during training:
         self.generate_samples = setting["generate_samples"]
@@ -372,16 +377,32 @@ class Train():
         # 2. Core Training Logic
         with torch.cuda.amp.autocast():
             # Forward pass (with or without noise)
-            C_real = self.netC(real_images_transformed).mean()
-            C_fake = self.netC(fake_images_transformed).mean()
+            C_real = self.netC(real_images_transformed)
+            C_fake = self.netC(fake_images_transformed)
+            
+            # Apply label smoothing if enabled
+            if self.use_label_smoothing:
+                # Create smoothed labels
+                real_labels = torch.full_like(C_real, self.smooth_real, device=self.device)
+                fake_labels = torch.full_like(C_fake, self.smooth_fake, device=self.device)
+                
+                # Calculate MSE loss with smoothed labels
+                real_loss = F.mse_loss(C_real, real_labels)
+                fake_loss = F.mse_loss(C_fake, fake_labels)
+                wasserstein_loss = real_loss + fake_loss
+            else:
+                # Original Wasserstein loss
+                wasserstein_loss = C_fake.mean() - C_real.mean()
+            
             # Gradient penalty (always uses original images)
             with torch.cuda.amp.autocast(enabled=False):
                 gradient_penalty, grad_norm = self._compute_gradient_penalty(
                     real_images.float(),  # Original images for GP
                     fake_images.float()
                 )           
-            # Wasserstein loss
-            C_loss = C_fake - C_real + gradient_penalty  
+            
+            # Total loss
+            C_loss = wasserstein_loss + gradient_penalty
 
         # 3. Backward Pass
         self.scaler.scale(C_loss).backward(retain_graph=True)
@@ -389,7 +410,6 @@ class Train():
         self.scaler.update()
         
         return C_loss.item(), gradient_penalty.item(), grad_norm
-    
 
     def _train_generator(self, fake_images):
         # Reset gradients
@@ -398,9 +418,16 @@ class Train():
         # Enable AMP for forward pass
         with torch.cuda.amp.autocast():
             # Send fake batch through Critic
-            C_fake = self.netC(fake_images).mean()
-            # Calculate Wasserstein loss: Generator tries to maximize C_fake
-            G_loss = -C_fake
+            C_fake = self.netC(fake_images)
+            
+            # Apply label smoothing if enabled
+            if self.use_label_smoothing:
+                # Generator wants fake images to be classified as real (smoothed)
+                target_labels = torch.full_like(C_fake, self.smooth_real, device=self.device)
+                G_loss = F.mse_loss(C_fake, target_labels)
+            else:
+                # Original Wasserstein loss: Generator tries to maximize C_fake
+                G_loss = -C_fake.mean()
 
         # Backward pass with GradScaler
         self.scaler.scale(G_loss).backward()
@@ -527,5 +554,62 @@ class Train():
             print(f'C_Loss: {C_loss_avg:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen_avg:.4f}, Grad_norm: {Grad_norm_avg:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
         print("Training finished!")
+
+
+
+"""
+def _train_critic(self, real_images, fake_images, epoch):
+    self.netC.zero_grad()
+
+    # 1. Optional Noise Injection
+    if self.use_noise_injection:
+        # Linear decay from max_noise_std to min_noise_std
+        noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
+        real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
+        fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
+    else:
+        real_images_transformed = real_images
+        fake_images_transformed = fake_images.detach()
+
+    # 2. Core Training Logic
+    with torch.cuda.amp.autocast():
+        # Forward pass (with or without noise)
+        C_real = self.netC(real_images_transformed).mean()
+        C_fake = self.netC(fake_images_transformed).mean()
+        # Gradient penalty (always uses original images)
+        with torch.cuda.amp.autocast(enabled=False):
+            gradient_penalty, grad_norm = self._compute_gradient_penalty(
+                real_images.float(),  # Original images for GP
+                fake_images.float()
+            )           
+        # Wasserstein loss
+        C_loss = C_fake - C_real + gradient_penalty  
+
+    # 3. Backward Pass
+    self.scaler.scale(C_loss).backward(retain_graph=True)
+    self.scaler.step(self.optimizerC)
+    self.scaler.update()
+    
+    return C_loss.item(), gradient_penalty.item(), grad_norm
+
+
+def _train_generator(self, fake_images):
+    # Reset gradients
+    self.netG.zero_grad()
+
+    # Enable AMP for forward pass
+    with torch.cuda.amp.autocast():
+        # Send fake batch through Critic
+        C_fake = self.netC(fake_images).mean()
+        # Calculate Wasserstein loss: Generator tries to maximize C_fake
+        G_loss = -C_fake
+
+    # Backward pass with GradScaler
+    self.scaler.scale(G_loss).backward()
+    self.scaler.step(self.optimizerG)
+    self.scaler.update()
+
+    return G_loss.item()
+"""
 
 

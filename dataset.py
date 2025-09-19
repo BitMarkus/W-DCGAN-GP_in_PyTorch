@@ -234,41 +234,33 @@ class Dataset():
 
     # Load dataset
     def load_training_dataset(self):
-        
+        # Checks:
         # Check if dataroot exists
         if not os.path.exists(self.dataroot):
             print(f"Warning: Dataset directory '{self.dataroot}' does not exist!")
             return False
-        
         # Check if dataroot is a directory
         if not os.path.isdir(self.dataroot):
             print(f"Warning: '{self.dataroot}' is not a directory!")
             return False
-        
         # Check if there are any subdirectories (classes) in the dataroot
         subdirs = [d for d in os.listdir(self.dataroot) 
                 if os.path.isdir(os.path.join(self.dataroot, d))]
-        
         if not subdirs:
             print(f"Warning: No class subdirectories found in '{self.dataroot}'!")
             return False
-        
         # Check if ALL subdirectories contain images
         image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'}
         empty_dirs = []
-        
         for subdir in subdirs:
             subdir_path = os.path.join(self.dataroot, subdir)
             has_images = False
-            
             for file in os.listdir(subdir_path):
                 if any(file.lower().endswith(ext) for ext in image_extensions):
                     has_images = True
                     break
-            
             if not has_images:
                 empty_dirs.append(subdir)
-        
         if empty_dirs:
             print(f"Warning: The following directories contain no images: {', '.join(empty_dirs)}")
             return False
@@ -278,7 +270,6 @@ class Dataset():
             transformer = self._get_transformer_with_augment()
         else:
             transformer = self._get_transformer()
-            
         if not transformer:
             print("Loading of dataset failed! Input images must have either one (grayscale) or three (RGB) channels.")
             return False

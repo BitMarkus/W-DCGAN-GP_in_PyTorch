@@ -3,8 +3,6 @@
 
 import random
 import torch
-import torch.nn.parallel
-import torch.utils.data
 # Own modules
 from settings import setting
 from dataset import Dataset
@@ -91,7 +89,7 @@ def main():
         elif(menu1 == 3):       
             print("\n:GENERATE SAMPLES:")  
             dataloader = ds.load_training_dataset()
-            # Create train object
+            # Create train object (necessary for generator network)
             train = Train(device, dataloader)
             samples = Generate(train)
             samples(device)

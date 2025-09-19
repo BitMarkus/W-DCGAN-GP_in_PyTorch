@@ -25,7 +25,7 @@ setting = {
     "gen_lrs_t_mult": 2,                    # Cycle length grows exponentially (T_0, T_0*2, T_0*4, ...). Set to 1 for fixed-length cycles
 
     # CRITIC:
-    "crit_learning_rate": 0.00002,          # 0.00002
+    "crit_learning_rate": 0.00002,          # 0.00002 (only 1/10th of generator!)
     # Use learning rate scheduler
     "crit_use_lr_scheduler": True,
     # Learning rate scheduler type (set only one to True!)
@@ -35,6 +35,11 @@ setting = {
     "crit_lrs_eta_min": 0.000005,           # 0.000005 (4:1 ratio lr)
     "crit_lrs_t_0": 25,                     # 25
     "crit_lrs_t_mult": 1,                   # when 1 the lr resets every crit_lrs_t_0 cycle, when 2 the period doubles after each restart (e.g., 10, 20, 40, 80 epochs...)
+
+    # WGAN
+    # Training critic more that generator
+    "num_crit_training": 3,                 # 2
+    "gradient_penalty_weight": 10,          # 10
 
     # Input/output dims
     "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
@@ -65,13 +70,9 @@ setting = {
     # [32, 64, 64, 128, 128, 256, 512]
     # [32, 64, 128, 256, 256, 512, 512]
 
-    #################
-    # AUGMENTATIONS #
-    #################
-
+    # AUGMENTATIONS:
     # Use augmentations
     "train_use_augment": True, 
-
     # INTENSITY AUGMENTATIONS:
     "aug_intense_prob": 0.5,
     "aug_brightness": 0.2,
@@ -114,6 +115,10 @@ setting = {
     "use_noise_injection": True,            # Toggle noise injection
     "max_noise_std": 0.05,                  # Initial noise level
     "min_noise_std": 0.01,                  # Minimum noise level
+    # Label smoothing for critic training
+    "use_label_smoothing": True,
+    "smooth_real": 0.9,  # Target for real samples
+    "smooth_fake": 0.1,  # Target for fake samples    
 
     # Sample and plot generation
     # Training samples:
@@ -127,11 +132,6 @@ setting = {
     # Metrics plot
     "generate_plots": True,
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
-
-    # WGAN
-    # Training critic more that generator
-    "num_crit_training": 3,                 # 2
-    "gradient_penalty_weight": 10,          # 10
 
     # Paths 
     "pth_data_root": "data/",               # Root directory for all datasets
