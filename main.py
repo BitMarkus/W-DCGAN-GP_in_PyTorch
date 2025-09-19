@@ -61,6 +61,18 @@ def main():
             dataloader = ds.load_training_dataset()
             if(dataloader):
                 print("Dataset successfully loaded.")
+                # Print dataset info:
+                # Get total number of training images
+                print(f"Training on {ds.total_training_images} images")
+                # Get counts per folder/class
+                for folder, count in ds.dataset_image_counts.items():
+                    print(f"Class '{folder}': {count} images")
+                # Check if it's a conditional dataset (multiple classes)
+                is_conditional = len(ds.dataset_image_counts) > 1
+                print(f"Is conditional dataset: {is_conditional}")
+                # Get the list of class names (useful for conditional GAN)
+                class_names = list(ds.dataset_image_counts.keys())
+                print(f"Available classes: {class_names}")
 
         #########
         # Train #

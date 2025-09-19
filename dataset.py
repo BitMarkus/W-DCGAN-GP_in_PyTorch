@@ -34,10 +34,7 @@ class Dataset():
         # Number of workers for dataloader
         self.num_workers = setting["num_workers"]
 
-        ################
-        # Augentations #
-        ################
-
+        # AUGMENTATIONS:
         # Use augmentations
         self.train_use_augment = setting["train_use_augment"]
         # INTENSITY AUGMENTATIONS:
@@ -69,8 +66,13 @@ class Dataset():
         self.poiss_scaling = setting["aug_poiss_scaling"]
         # Noise Strength: Final noise intensity multiplier
         self.poiss_noise_strength = setting["aug_poiss_noise_strength"]
+
+        # DATASET PARAMETERS:
         # Flag if dataset is already loaded or not
         self.is_dataset_loaded = False
+        # Dataset information
+        self.dataset_image_counts = {}  # Dictionary: {folder_name: image_count}
+        self.total_training_images = 0  # Total number of training images
 
     #############################################################################################################
     # METHODS:
@@ -243,27 +245,41 @@ class Dataset():
         if not os.path.isdir(self.dataroot):
             print(f"Warning: '{self.dataroot}' is not a directory!")
             return False
-        # Check if there are any subdirectories (classes) in the dataroot
+        
+        # Get all subdirectories (classes) in the dataroot
         subdirs = [d for d in os.listdir(self.dataroot) 
                 if os.path.isdir(os.path.join(self.dataroot, d))]
+        
         if not subdirs:
             print(f"Warning: No class subdirectories found in '{self.dataroot}'!")
             return False
-        # Check if ALL subdirectories contain images
+        
+        # Check if ALL subdirectories contain images and count them
         image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'}
         empty_dirs = []
+        image_counts = {}  # Dictionary to store folder names and image counts
+        
         for subdir in subdirs:
             subdir_path = os.path.join(self.dataroot, subdir)
-            has_images = False
+            image_count = 0
+            
+            # Count images in this subdirectory
             for file in os.listdir(subdir_path):
                 if any(file.lower().endswith(ext) for ext in image_extensions):
-                    has_images = True
-                    break
-            if not has_images:
+                    image_count += 1
+            
+            if image_count == 0:
                 empty_dirs.append(subdir)
+            else:
+                image_counts[subdir] = image_count
+        
         if empty_dirs:
             print(f"Warning: The following directories contain no images: {', '.join(empty_dirs)}")
             return False
+        
+        # Store the image counts as a class variable
+        self.dataset_image_counts = image_counts
+        self.total_training_images = sum(image_counts.values())
         
         # Load transformer with or without augmentations
         if self.train_use_augment:
