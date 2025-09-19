@@ -6,6 +6,7 @@ import torch
 from torchvision.transforms import transforms
 import numpy as np
 import random 
+import os
 from torch.utils.data import DataLoader
 import torchvision.datasets as dset
 import torchvision.utils as vutils
@@ -233,7 +234,6 @@ class Dataset():
 
     # Load dataset
     def load_training_dataset(self):
-        import os
         
         # Check if dataroot exists
         if not os.path.exists(self.dataroot):
@@ -253,21 +253,24 @@ class Dataset():
             print(f"Warning: No class subdirectories found in '{self.dataroot}'!")
             return False
         
-        # Check if any subdirectory contains images
+        # Check if ALL subdirectories contain images
         image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'}
-        has_images = False
+        empty_dirs = []
         
         for subdir in subdirs:
             subdir_path = os.path.join(self.dataroot, subdir)
+            has_images = False
+            
             for file in os.listdir(subdir_path):
                 if any(file.lower().endswith(ext) for ext in image_extensions):
                     has_images = True
                     break
-            if has_images:
-                break
+            
+            if not has_images:
+                empty_dirs.append(subdir)
         
-        if not has_images:
-            print(f"Warning: No images found in any subdirectory of '{self.dataroot}'!")
+        if empty_dirs:
+            print(f"Warning: The following directories contain no images: {', '.join(empty_dirs)}")
             return False
         
         # Load transformer with or without augmentations
