@@ -15,7 +15,7 @@ setting = {
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
     # Use learning rate scheduler
-    "gen_use_lr_scheduler": False,
+    "gen_use_lr_scheduler": False,          # No lrs works best here!
     # Learning rate scheduler type (set only one to True!)
     "gen_use_cosine_ann": True,             # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
     "gen_use_cosine_ann_wr": False,         # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
