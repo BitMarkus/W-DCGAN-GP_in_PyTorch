@@ -64,3 +64,14 @@ def check_int_range(var, min, max):
     else:
         return False
     
+# Creates an input with prompt
+# which is checked, if the input is an integer number
+# If not, the loop will continue until a valid number is entered
+def input_int(prompt):
+    while(True):
+        nr = input(prompt)
+        if not(check_int(nr)):
+            print("Input is not an integer number! Try again...")
+        else:
+            return int(nr)  
+    

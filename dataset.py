@@ -68,6 +68,8 @@ class Dataset():
         self.poiss_scaling = setting["aug_poiss_scaling"]
         # Noise Strength: Final noise intensity multiplier
         self.poiss_noise_strength = setting["aug_poiss_noise_strength"]
+        # Flag if dataset is already loaded or not
+        self.is_dataset_loaded = False
 
     #############################################################################################################
     # METHODS:
@@ -231,7 +233,43 @@ class Dataset():
 
     # Load dataset
     def load_training_dataset(self):
-
+        import os
+        
+        # Check if dataroot exists
+        if not os.path.exists(self.dataroot):
+            print(f"Warning: Dataset directory '{self.dataroot}' does not exist!")
+            return False
+        
+        # Check if dataroot is a directory
+        if not os.path.isdir(self.dataroot):
+            print(f"Warning: '{self.dataroot}' is not a directory!")
+            return False
+        
+        # Check if there are any subdirectories (classes) in the dataroot
+        subdirs = [d for d in os.listdir(self.dataroot) 
+                if os.path.isdir(os.path.join(self.dataroot, d))]
+        
+        if not subdirs:
+            print(f"Warning: No class subdirectories found in '{self.dataroot}'!")
+            return False
+        
+        # Check if any subdirectory contains images
+        image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp'}
+        has_images = False
+        
+        for subdir in subdirs:
+            subdir_path = os.path.join(self.dataroot, subdir)
+            for file in os.listdir(subdir_path):
+                if any(file.lower().endswith(ext) for ext in image_extensions):
+                    has_images = True
+                    break
+            if has_images:
+                break
+        
+        if not has_images:
+            print(f"Warning: No images found in any subdirectory of '{self.dataroot}'!")
+            return False
+        
         # Load transformer with or without augmentations
         if self.train_use_augment:
             transformer = self._get_transformer_with_augment()
@@ -252,5 +290,8 @@ class Dataset():
             persistent_workers=True,
             pin_memory=True, 
         )
-        return data_loader  
 
+        # Set flag
+        self.is_dataset_loaded = True
+
+        return data_loader

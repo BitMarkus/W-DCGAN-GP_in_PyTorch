@@ -10,12 +10,12 @@ setting = {
  
     # Training parameters
     "batch_size": 32,                       # Strongly depends on the number of filters! around 32      
-    "num_epochs": 300, 
+    "num_epochs": 500, 
 
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
     # Use learning rate scheduler
-    "gen_use_lr_scheduler": True,
+    "gen_use_lr_scheduler": False,
     # Learning rate scheduler type (set only one to True!)
     "gen_use_cosine_ann": True,             # If use_cosine_ann and use_cosine_ann_wr are both set to True, cosine_ann will be taken
     "gen_use_cosine_ann_wr": False,         # If use_cosine_ann and use_cosine_ann_wr are both set to False, it is the same as setting use_lr_scheduler to False
@@ -29,11 +29,11 @@ setting = {
     # Use learning rate scheduler
     "crit_use_lr_scheduler": True,
     # Learning rate scheduler type (set only one to True!)
-    "crit_use_cosine_ann": True,
-    "crit_use_cosine_ann_wr": False,
+    "crit_use_cosine_ann": False,
+    "crit_use_cosine_ann_wr": True,
     # CosineAnnealingWarmRestarts:
-    "crit_lrs_eta_min": 0.00001,            # 0.00001 = 1e-5  (0.000002)
-    "crit_lrs_t_0": 10,                     # 10
+    "crit_lrs_eta_min": 0.000005,           # 0.000005 (4:1 ratio lr)
+    "crit_lrs_t_0": 25,                     # 25
     "crit_lrs_t_mult": 1,                   # when 1 the lr resets every crit_lrs_t_0 cycle, when 2 the period doubles after each restart (e.g., 10, 20, 40, 80 epochs...)
 
     # Input/output dims
@@ -56,7 +56,7 @@ setting = {
     # [512, 256, 128, 128, 64, 64, 32]
     # [384, 192, 96, 96, 48, 48, 24]
     # The Critic should have 1.2–2.5x the generator’s parameters
-    "crit_chan_per_layer": [64, 128, 256, 256, 512, 512, 512],   # before: [64, 64, 128, 128, 256, 256, 512]
+    "crit_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],   
     # Alternatives: 
     # [16, 32, 64, 128, 256, 512, 1024]
     # [64, 128, 128, 256, 256, 512, 512]
@@ -130,7 +130,7 @@ setting = {
 
     # WGAN
     # Training critic more that generator
-    "num_crit_training": 2,                 # 2
+    "num_crit_training": 3,                 # 2
     "gradient_penalty_weight": 10,          # 10
 
     # Paths 
