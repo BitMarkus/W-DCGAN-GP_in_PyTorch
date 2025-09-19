@@ -72,11 +72,15 @@ def main():
             if(ds.is_dataset_loaded):
                 # Create train object
                 train = Train(device, dataloader)
+
                 # Number of trainable parameters for generator and critic
-                print("\nNumber of parameters for critic:")
-                fn.count_parameters(train.netC)
-                print("\nNumber of parameters for generator:")
-                fn.count_parameters(train.netG)
+                print("Number of trainable parameters:")
+                num_param_crit = fn.count_parameters(train.netC)
+                print(f"Critic: {num_param_crit}")
+                num_param_gen = fn.count_parameters(train.netG)
+                print(f"Generator: {num_param_gen}")
+                print(f"Ratio critic/generator: {num_param_crit/num_param_gen:.2f} (recommended: 1.2-2.0)")
+
                 # Train on dataset
                 train.train()
             else:

@@ -45,6 +45,7 @@ class Train():
         self.latent_vector_size = setting["latent_vector_size"]
         # Number of GPUs available. Use 0 for CPU mode.
         self.num_gpu = setting["num_gpu"]
+        
         # Parameters for optimizer
         # Generator:
         self.gen_adam_beta_1 = setting["gen_adam_beta_1"]
