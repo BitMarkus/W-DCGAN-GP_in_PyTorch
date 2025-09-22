@@ -9,8 +9,8 @@ setting = {
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
  
     # Training parameters
-    "batch_size": 32,                       # Strongly depends on the number of filters! around 32      
-    "num_epochs": 500, 
+    "batch_size": 36,                       # Strongly depends on the number of filters! around 32      
+    "num_epochs": 300, 
 
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002

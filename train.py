@@ -367,9 +367,9 @@ class Train():
 
         # 1. Optional Noise Injection
         if self.use_noise_injection:
-            # Linear decay from max_noise_std to min_noise_std
             noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
             real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
+            # Detach fake_images to prevent generator gradients from flowing into critic update
             fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
         else:
             real_images_transformed = real_images
@@ -383,23 +383,20 @@ class Train():
             
             # Apply label smoothing if enabled
             if self.use_label_smoothing:
-                # Create smoothed labels
                 real_labels = torch.full_like(C_real, self.smooth_real, device=self.device)
                 fake_labels = torch.full_like(C_fake, self.smooth_fake, device=self.device)
                 
-                # Calculate MSE loss with smoothed labels
                 real_loss = F.mse_loss(C_real, real_labels)
                 fake_loss = F.mse_loss(C_fake, fake_labels)
                 wasserstein_loss = real_loss + fake_loss
             else:
-                # Original Wasserstein loss
                 wasserstein_loss = C_fake.mean() - C_real.mean()
             
-            # Gradient penalty (always uses original images)
+            # Disable AMP for gradient penalty calculation precision
             with torch.cuda.amp.autocast(enabled=False):
                 gradient_penalty, grad_norm = self._compute_gradient_penalty(
-                    real_images.float(),  # Original images for GP
-                    fake_images.float()
+                    real_images_transformed.float(),  # Use the noisy images
+                    fake_images_transformed.float()   # Use the noisy images
                 )           
             
             # Total loss
