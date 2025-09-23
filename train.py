@@ -297,8 +297,6 @@ class Train():
         image_grid = make_grid(image_unflat[:num_to_display], nrow=nrow)
         
         # Calculate figure size based on original image resolution
-        # Each original image is 512x512 pixels
-        # For 300 DPI, we need to convert pixels to inches: inches = pixels / DPI
         single_image_width_inches = 512 / 300  # ~1.71 inches
         single_image_height_inches = 512 / 300  # ~1.71 inches
         
@@ -307,18 +305,26 @@ class Train():
         
         # Create figure with high DPI and precise size
         plt.figure(figsize=(fig_width, fig_height), dpi=300)
-        plt.imshow(image_grid.permute(1, 2, 0).squeeze())
+        
+        # Handle both grayscale and RGB images
+        if image_grid.size(0) == 1:
+            # Grayscale image: use squeeze() and cmap='gray'
+            plt.imshow(image_grid.permute(1, 2, 0).squeeze(), cmap='gray')
+        else:
+            # RGB image: don't use squeeze(), and no cmap
+            plt.imshow(image_grid.permute(1, 2, 0))
         
         # Remove axes and padding
         plt.axis('off')
         plt.tight_layout(pad=0)
         
         if save_plot:
+            filename = self._get_filename(f"sample_epoch_{epoch}", ".png")
             plt.savefig(
-                f"{pth_samples}sample_img_epoch_{epoch}", 
+                f"{pth_samples}/{filename}", 
                 bbox_inches='tight', 
                 pad_inches=0,
-                dpi=300  # High resolution output
+                dpi=300
             )
             plt.close()
         
@@ -326,7 +332,6 @@ class Train():
             plt.show()
         
         print(f"Sample images for epoch {epoch} were successfully saved in {pth_samples}")
-        # print(f"Displayed {num_to_display} images in {nrow}×{ncol} grid at 300 DPI")
         return True
 
     # Create noise vector(s) for the generator
