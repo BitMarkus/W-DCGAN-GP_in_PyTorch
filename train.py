@@ -296,15 +296,19 @@ class Train():
         # Create a grid of images
         image_grid = make_grid(image_unflat[:num_to_display], nrow=nrow)
         
-        # Calculate figure size based on original image resolution
-        single_image_width_inches = 512 / 300  # ~1.71 inches
-        single_image_height_inches = 512 / 300  # ~1.71 inches
+        # Calculate figure size to get ~512px per image at 300 DPI
+        target_dpi = 300
+        
+        # Calculate figure size in inches (each image should be ~512px at the target DPI)
+        # Inches = Pixels / DPI
+        single_image_width_inches = 512 / target_dpi  # ~1.71 inches for 512px at 300 DPI
+        single_image_height_inches = 512 / target_dpi  # ~1.71 inches for 512px at 300 DPI
         
         fig_width = ncol * single_image_width_inches
         fig_height = nrow * single_image_height_inches
         
-        # Create figure with high DPI and precise size
-        plt.figure(figsize=(fig_width, fig_height), dpi=300)
+        # Create figure with the calculated size
+        plt.figure(figsize=(fig_width, fig_height), dpi=target_dpi)
         
         # Handle both grayscale and RGB images
         if image_grid.size(0) == 1:
@@ -319,13 +323,12 @@ class Train():
         plt.tight_layout(pad=0)
         
         if save_plot:
-            # No timestamp in sample images
-            filename = f"sample_epoch_{epoch}", ".png"
+            filename = f"sample_epoch_{epoch}.png"
             plt.savefig(
                 f"{pth_samples}/{filename}", 
                 bbox_inches='tight', 
                 pad_inches=0,
-                dpi=300
+                dpi=target_dpi  # Use the same target DPI for saving
             )
             plt.close()
         

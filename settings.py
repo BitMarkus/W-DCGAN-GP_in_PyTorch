@@ -8,7 +8,7 @@ setting = {
     # TRAINING PARAMETERS #
     #######################
  
-    "batch_size": 36,                        
+    "batch_size": 35,                        
     "num_epochs": 300, 
     # WGAN specific:
     "num_crit_training": 3,                 # Training critic more that generator
@@ -83,15 +83,15 @@ setting = {
     ##################
 
     # Dropout for critic
-    "crit_dropout": 0.2,                    
+    "crit_dropout": 0.1,                    
     # Noise injection for critic training
     "use_noise_injection": True,            # Toggle noise injection
     "max_noise_std": 0.05,                  # Initial noise level
     "min_noise_std": 0.01,                  # Minimum noise level
     # Label smoothing for critic training
     "use_label_smoothing": True,
-    "smooth_real": 0.9,  # Target for real samples
-    "smooth_fake": 0.1,  # Target for fake samples    
+    "smooth_real": 0.99,  # Target for real samples
+    "smooth_fake": 0.01,  # Target for fake samples    
 
     ##############
     # INPUT DIMS #
