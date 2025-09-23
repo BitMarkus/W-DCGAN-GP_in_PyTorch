@@ -319,7 +319,8 @@ class Train():
         plt.tight_layout(pad=0)
         
         if save_plot:
-            filename = self._get_filename(f"sample_epoch_{epoch}", ".png")
+            # No timestamp in sample images
+            filename = f"sample_epoch_{epoch}", ".png"
             plt.savefig(
                 f"{pth_samples}/{filename}", 
                 bbox_inches='tight', 

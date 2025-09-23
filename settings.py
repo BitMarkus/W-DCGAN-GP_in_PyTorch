@@ -4,13 +4,19 @@
 
 setting = {
 
-    # GPU and GPU
-    "num_workers": 1,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???
-    "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
+    #######################
+    # TRAINING PARAMETERS #
+    #######################
  
-    # Training parameters
-    "batch_size": 36,                       # Strongly depends on the number of filters! around 32      
+    "batch_size": 36,                        
     "num_epochs": 300, 
+    # WGAN specific:
+    "num_crit_training": 3,                 # Training critic more that generator
+    "gradient_penalty_weight": 10,          # 10
+
+    ################################
+    # LEARNING RATES AND SCHEDULER #
+    #################################
 
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
@@ -36,41 +42,10 @@ setting = {
     "crit_lrs_t_0": 25,                     # 25
     "crit_lrs_t_mult": 1,                   # when 1 the lr resets every crit_lrs_t_0 cycle, when 2 the period doubles after each restart (e.g., 10, 20, 40, 80 epochs...)
 
-    # WGAN
-    # Training critic more that generator
-    "num_crit_training": 3,                 # 2
-    "gradient_penalty_weight": 10,          # 10
+    #################
+    # AUGMENTATIONs #
+    #################
 
-    # Input/output dims
-    "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
-    "img_size": 512,                        # Spatial size of training images. All images will be resized to this size using a transformer
-
-    # Conv parameters
-    "conv_kernel_size": 3,                  # Option 1: 5, 2, 2, (1) -> Seems to work best
-    "conv_stride": 2,                       # Option 2: 3, 2, 1, (1) -> Most common one! Should be used
-    "conv_padding": 1,                      # Option 3: 4, 2, 1, (0) -> Not so common. Causes asymetries
-    "conv_out_padding": 1, 
-    "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
-    "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
-    "gen_chan_per_layer": [512, 256, 128, 64, 32, 16, 8],
-    # Alternatives: 
-    # [1024, 512, 256, 128, 64, 32, 16]
-    # [512, 512, 256, 256, 128, 128, 64]
-    # [512, 256, 256, 128, 128, 64, 64]
-    # [512, 256, 128, 64, 32, 16, 8] 
-    # [512, 256, 128, 128, 64, 64, 32]
-    # [384, 192, 96, 96, 48, 48, 24]
-    # The Critic should have 1.2–2.5x the generator’s parameters
-    "crit_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],   
-    # Alternatives: 
-    # [16, 32, 64, 128, 256, 512, 1024]
-    # [64, 128, 128, 256, 256, 512, 512]
-    # [64, 64, 128, 128, 256, 256, 512]
-    # [8, 16, 32, 64, 128, 256, 512]
-    # [32, 64, 64, 128, 128, 256, 512]
-    # [32, 64, 128, 256, 256, 512, 512]
-
-    # AUGMENTATIONS:
     # Use augmentations
     "train_use_augment": True, 
     # INTENSITY AUGMENTATIONS:
@@ -103,14 +78,12 @@ setting = {
     # Noise Strength: Final noise intensity multiplier
     "aug_poiss_noise_strength": 0.1,
 
-    # Misc
-    "gen_adam_beta_1": 0.5,                 # Beta 1 and 2 parameter for ADAM optimizer
-    "gen_adam_beta_2": 0.9,
-    "crit_adam_beta_1": 0.0,                # NO momentum for critic!
-    "crit_adam_beta_2": 0.9,
-    "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
-    "crit_dropout": 0.2,                    # Dropout for critic
+    ##################
+    # REGULARIZATION #
+    ##################
 
+    # Dropout for critic
+    "crit_dropout": 0.2,                    
     # Noise injection for critic training
     "use_noise_injection": True,            # Toggle noise injection
     "max_noise_std": 0.05,                  # Initial noise level
@@ -120,7 +93,51 @@ setting = {
     "smooth_real": 0.9,  # Target for real samples
     "smooth_fake": 0.1,  # Target for fake samples    
 
-    # Sample and plot generation
+    ##############
+    # INPUT DIMS #
+    ##############
+
+    "img_channels": 1,                      # Number of channels in the training images. For color images this is 3  
+    "img_size": 512,                        # Spatial size of training images. All images will be resized to this size using a transformer
+
+    ########################
+    # NETWORK ARCHITECTURE #
+    ########################
+
+    # Conv parameters
+    "conv_kernel_size": 3,                  # Option 1: 5, 2, 2, (1) -> Seems to work best
+    "conv_stride": 2,                       # Option 2: 3, 2, 1, (1) -> Most common one! Should be used
+    "conv_padding": 1,                      # Option 3: 4, 2, 1, (0) -> Not so common. Causes asymetries
+    "conv_out_padding": 1, 
+    # Latent vector size for generator
+    "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
+    "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
+    # Number of filters (7x) for critic and generator
+    "gen_chan_per_layer": [512, 256, 128, 64, 32, 16, 8],
+    # The Critic should have 1.2–2.5x the generator’s parameters
+    "crit_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],   
+
+    ############################
+    # OPTIMIZER AND ACTIVATION #
+    ############################
+
+    "gen_adam_beta_1": 0.5,                 # Beta 1 and 2 parameter for ADAM optimizer
+    "gen_adam_beta_2": 0.9,
+    "crit_adam_beta_1": 0.0,                # NO momentum for critic!
+    "crit_adam_beta_2": 0.9,
+    "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
+
+    ###############
+    # GPU AND GPU #
+    ###############
+
+    "num_workers": 1,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???
+    "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
+
+    ##############################
+    # SAMPLE AND PLOT GENERATION #
+    ##############################
+
     # Training samples:
     "generate_samples": True,
     "num_sample_images": 9,                 # Number of images, which will be saved during training as examples. Can be less as the last batch can contain less images!
@@ -133,7 +150,10 @@ setting = {
     "generate_plots": True,
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
 
-    # Paths 
+    #########
+    # PATHS #
+    #########
+
     "pth_data_root": "data/",               # Root directory for all datasets
     "pth_data": "data/fibroblasts/",        # Root directory for the current dataset
     "pth_samples": "samples/",              # Directory for generated samples during training
