@@ -52,7 +52,7 @@ setting = {
     "aug_intense_prob": 0.5,
     "aug_brightness": 0.2,
     "aug_contrast": 0.2,
-    "aug_saturation": 0.2, # only for RGB images
+    "aug_saturation": 0.2,                  # only for RGB images
     # Gamma correction
     # Gamma = 1: No change. The image looks "natural" (linear brightness)
     # Gamma < 1 (e.g., 0.5): Dark areas get brighter, bright areas stay mostly the same
@@ -90,8 +90,8 @@ setting = {
     "min_noise_std": 0.01,                  # Minimum noise level
     # Label smoothing for critic training
     "use_label_smoothing": True,
-    "smooth_real": 0.99,  # Target for real samples
-    "smooth_fake": 0.01,  # Target for fake samples    
+    "smooth_real": 0.99,                    # Target for real samples
+    "smooth_fake": 0.01,                    # Target for fake samples    
 
     ##############
     # INPUT DIMS #
@@ -128,7 +128,7 @@ setting = {
     "lrelu_alpha": 0.2,                     # Alpha value of leaky ReLU activation function
 
     ###############
-    # GPU AND GPU #
+    # CPU AND GPU #
     ###############
 
     "num_workers": 1,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???

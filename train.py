@@ -17,17 +17,6 @@ from settings import setting
 from critic import Critic
 from generator import Generator
 
-# Healthy training signs:
-# C_Loss: oscillates around 0 (slightly negative or positive)  
-# G_Loss: gradually becomes more negative over time
-# Grad_pen: around 0.1-1.0
-# Grad_norm: around 1.0
-
-# Warning signs:
-# C_Lost: consistently very negative ← Critic too strong
-# C_Loss: consistently very positive ← Critic too weak 
-# G_Loss: extremely negative early ← Unstable training
-
 class Train():
 
     #############################################################################################################
@@ -562,61 +551,46 @@ class Train():
             
         print("Training finished!")
 
+# Healthy training signs for WGAN-GP with label smoothing:
 
+# Critic Loss:
+# Healthy Range: -0.5 to +0.5 (without label smoothing)
+# With label smoothing (0.99 real, 0.01 fake): 0.1 to 0.3 is ideal
+# What it represents: How well the critic distinguishes real from fake samples
 
-"""
-def _train_critic(self, real_images, fake_images, epoch):
-    self.netC.zero_grad()
+# Generator Loss:
+# Healthy Range: -1.0 to +1.0 (typically -0.8 to +0.8)
+# Ideal: Negative values or low positive values (below 0.5)
+# What it represents: How well the generator fools the critic
 
-    # 1. Optional Noise Injection
-    if self.use_noise_injection:
-        # Linear decay from max_noise_std to min_noise_std
-        noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
-        real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
-        fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
-    else:
-        real_images_transformed = real_images
-        fake_images_transformed = fake_images.detach()
+# Gradiiant penalty and norm:
+# Grad_pen: around 0.1-1.0
+# Grad_norm: around 1.0
 
-    # 2. Core Training Logic
-    with torch.cuda.amp.autocast():
-        # Forward pass (with or without noise)
-        C_real = self.netC(real_images_transformed).mean()
-        C_fake = self.netC(fake_images_transformed).mean()
-        # Gradient penalty (always uses original images)
-        with torch.cuda.amp.autocast(enabled=False):
-            gradient_penalty, grad_norm = self._compute_gradient_penalty(
-                real_images.float(),  # Original images for GP
-                fake_images.float()
-            )           
-        # Wasserstein loss
-        C_loss = C_fake - C_real + gradient_penalty  
+# Warning signs:
+# C_Lost: consistently very negative ← Critic too strong
+# C_Loss: consistently very positive ← Critic too weak 
+# G_Loss: extremely negative early ← Unstable training
 
-    # 3. Backward Pass
-    self.scaler.scale(C_loss).backward(retain_graph=True)
-    self.scaler.step(self.optimizerC)
-    self.scaler.update()
-    
-    return C_loss.item(), gradient_penalty.item(), grad_norm
+# Scenario 1: Both Losses Decreasing
+# Interpretation: Ideal training - Both networks are improving together. 
+# The generator is getting better at creating realistic samples, and the critic is maintaining its discrimination ability.
 
+# Scenario 2: Critic Loss Decreasing, Generator Loss Increasing
+# Interpretation: Critic becoming too strong
+# Causes: Critic learning rate too high relative to generator, Too many critic updates per generator update, Critic architecture too powerful
 
-def _train_generator(self, fake_images):
-    # Reset gradients
-    self.netG.zero_grad()
+# Scenario 3: Generator Loss Decreasing, Critic Loss Increasing
+# Interpretation: Generator becoming too strong / Critic too weak
+# Causes: Generator learning rate too high, Not enough critic training, Insufficient critic capacity
 
-    # Enable AMP for forward pass
-    with torch.cuda.amp.autocast():
-        # Send fake batch through Critic
-        C_fake = self.netC(fake_images).mean()
-        # Calculate Wasserstein loss: Generator tries to maximize C_fake
-        G_loss = -C_fake
+# Scenario 4: Both Losses Increasing
+# Interpretation: Training instability
+# Causes: Learning rates too high, Gradient penalty weight inappropriate, Architectural issues
 
-    # Backward pass with GradScaler
-    self.scaler.scale(G_loss).backward()
-    self.scaler.step(self.optimizerG)
-    self.scaler.update()
+# Scenario 5: Both Losses Oscillating Wildly
+# Interpretation: Unstable equilibrium
+# Causes: Poor hyperparameter balance
 
-    return G_loss.item()
-"""
 
 
