@@ -235,7 +235,7 @@ class Train():
         # INFO: plt.subplot(rows, colums, plot position)
         # Generator and Critic loss
         plt.subplot(2, 2, 1)
-        plt.ylim(-20, 30)
+        # plt.ylim(-20, 30)
         plt.plot(epochs_range, history["G_loss"], label='G loss', color='green')
         plt.plot(epochs_range, history["C_loss"], label='C loss', color='red')
         plt.legend(loc='upper right')
@@ -250,12 +250,12 @@ class Train():
         plt.title('Learning Rate')  
         # Gradient penalty
         plt.subplot(2, 2, 3)
-        plt.ylim(-1, 4)
+        # plt.ylim(-1, 4)
         plt.plot(epochs_range, history["Grad_pen"], label='Grad pen', color='blue')
         plt.title('Gradiant penalty')  
         # Gradient norm
         plt.subplot(2, 2, 4)
-        plt.ylim(0.5, 2)
+        # plt.ylim(0.5, 2)
         plt.plot(epochs_range, history["Grad_norm"], label='Grad norm', color='blue')
         plt.title('Gradient norm')      
         plt.tight_layout()

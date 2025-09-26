@@ -8,7 +8,7 @@ setting = {
     # TRAINING PARAMETERS #
     #######################
  
-    "batch_size": 32,                        
+    "batch_size": 30,                        
     "num_epochs": 100, 
     # WGAN specific:
     "num_crit_training": 3,                 # Training critic more that generator
@@ -131,7 +131,7 @@ setting = {
     # CPU AND GPU #
     ###############
 
-    "num_workers": 1,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???
+    "num_workers": 4,                       # Number of workers for dataloader, Default: 2, HERE: The less the better???
     "num_gpu": 1,                           # Number of GPUs available. Use 0 for CPU mode, Default: 1  
 
     ##############################
@@ -159,9 +159,9 @@ setting = {
 
     # Progressive parameter configuration (as percentages of total epochs)
     "progressive_phases": {
-        "early_phase_end": 0.2,      # 20% of total epochs
-        "mid_phase_end": 0.6,        # 60% of total epochs  
-        "late_phase_start": 0.8      # 80% of total epochs
+        "early_phase_end": 0.33,      # 1/3 of total epochs
+        "mid_phase_end": 0.66,        # 1/3 of total epochs  
+        "late_phase_start": 0.66      # 1/3 of total epochs
     },
 
     # Progressive parameter values for each phase
@@ -186,9 +186,9 @@ setting = {
         },
         # Noise Injection
         "noise_injection": {
-            "early": {"noise_std": 0.06, "enabled": True},    # Higher noise for regularization
+            "early": {"noise_std": 0.05, "enabled": True},    # Higher noise for regularization
             "mid": {"noise_std": 0.03, "enabled": True},      # Moderate noise
-            "late": {"noise_std": 0.01, "enabled": True}      # Minimal noise for refinement
+            "late": {"noise_std": 0.00, "enabled": False}      # Minimal noise for refinement
         },
     },
 
