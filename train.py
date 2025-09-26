@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from settings import setting
 from critic import Critic
 from generator import Generator
+from progressive_train import ProgressiveTrainManager
 
 class Train():
 
@@ -94,6 +95,18 @@ class Train():
         self.pth_plots = setting["pth_plots"]
         # Path for saving checkpoints
         self.pth_checkpoints = setting["pth_checkpoints"]
+
+        # Progressive training parameters
+        self.use_progressive_params = setting["use_progressive_params"]
+        # Progressive Manager       
+        if self.use_progressive_params:
+            self.progressive_manager = ProgressiveTrainManager(
+                total_epochs=self.num_epochs,
+                progressive_phases=setting["progressive_phases"],
+                progressive_params=setting["progressive_params"]
+            ) 
+            # Initialize current_noise_std with default value
+            self.current_noise_std = self.max_noise_std        
 
         ##########
         # Critic #
@@ -365,7 +378,13 @@ class Train():
 
         # 1. Optional Noise Injection
         if self.use_noise_injection:
-            noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
+
+            # Check if progressive noise std is available
+            if hasattr(self, 'current_noise_std') and self.use_progressive_params:
+                noise_std = self.current_noise_std  # Use progressive value
+            else:
+                noise_std = max(self.min_noise_std, self.max_noise_std * (1 - epoch / self.num_epochs))
+            
             real_images_transformed = real_images + noise_std * torch.randn_like(real_images)
             # Detach fake_images to prevent generator gradients from flowing into critic update
             fake_images_transformed = fake_images.detach() + noise_std * torch.randn_like(fake_images)
@@ -463,6 +482,10 @@ class Train():
 
             print(f'\n>> Epoch [{epoch+1}/{self.num_epochs}]:')
 
+            # Apply progressive parameters
+            if self.use_progressive_params:
+                self.progressive_manager.apply_progressive_params(self, epoch)
+
             # For each batch in the dataloader
             with tqdm(self.dataloader, unit="batch") as tepoch:
                 for step, data in enumerate(tepoch, 0):
@@ -549,7 +572,7 @@ class Train():
             # Print history
             print(f'C_Loss: {C_loss_avg:.4f}, G_Loss: {G_loss:.4f}, Grad_pen: {Grad_pen_avg:.4f}, Grad_norm: {Grad_norm_avg:.4f}, C_LR: {C_lr:.6f}, G_LR: {G_lr:.6f}')
             
-        print("Training finished!")
+        print("\nTraining finished!")
 
 # Healthy training signs for WGAN-GP with label smoothing:
 

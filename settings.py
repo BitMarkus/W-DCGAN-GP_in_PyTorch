@@ -9,7 +9,7 @@ setting = {
     #######################
  
     "batch_size": 32,                        
-    "num_epochs": 500, 
+    "num_epochs": 100, 
     # WGAN specific:
     "num_crit_training": 3,                 # Training critic more that generator
     "gradient_penalty_weight": 10,          # 10
@@ -39,7 +39,7 @@ setting = {
     "crit_use_cosine_ann_wr": True,
     # CosineAnnealingWarmRestarts:
     "crit_lrs_eta_min": 0.000005,           # 0.000005 (4:1 ratio lr)
-    "crit_lrs_t_0": 25,                     # 25
+    "crit_lrs_t_0": 30,                     # 25
     "crit_lrs_t_mult": 1,                   # when 1 the lr resets every crit_lrs_t_0 cycle, when 2 the period doubles after each restart (e.g., 10, 20, 40, 80 epochs...)
 
     #################
@@ -113,7 +113,7 @@ setting = {
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
     # Number of filters (7x) for critic and generator
-    "gen_chan_per_layer": [512, 256, 128, 64, 64, 32, 32],
+    "gen_chan_per_layer": [512, 256, 128, 128, 64, 64, 32],
     # The Critic should have 1.2–2.5x the generator’s parameters
     "crit_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],   
 
@@ -149,6 +149,48 @@ setting = {
     # Metrics plot
     "generate_plots": True,
     "generate_plot_epochs": 10,             # Save loss plot every x epochs
+
+    ########################
+    # PROGRESSIVE TRAINING #
+    ########################
+
+    # Master switch for progressive training
+    "use_progressive_params": True,  
+
+    # Progressive parameter configuration (as percentages of total epochs)
+    "progressive_phases": {
+        "early_phase_end": 0.2,      # 20% of total epochs
+        "mid_phase_end": 0.6,        # 60% of total epochs  
+        "late_phase_start": 0.8      # 80% of total epochs
+    },
+
+    # Progressive parameter values for each phase
+    "progressive_params": {
+        # Crit Training Ratio
+        "critic_training_ratio": {
+            "early": {"num_crit_training": 5},    # More critic training early on
+            "mid": {"num_crit_training": 3},      
+            "late": {"num_crit_training": 2}     
+        },
+        # Gradient Penalty Weight
+        "gradient_penalty_weight": {
+            "early": {"weight": 15},    # Stronger regularization initially
+            "mid": {"weight": 10},      # Standard weight
+            "late": {"weight": 5}       # Reduced penalty for fine-tuning
+        },
+        # Label Smoothing
+        "label_smoothing": {
+            "early": {"smooth_real": 0.95, "smooth_fake": 0.05, "enabled": True},
+            "mid": {"smooth_real": 0.99, "smooth_fake": 0.01, "enabled": True},
+            "late": {"smooth_real": 1.0, "smooth_fake": 0.0, "enabled": False}  # Turn off completely
+        },
+        # Noise Injection
+        "noise_injection": {
+            "early": {"noise_std": 0.06, "enabled": True},    # Higher noise for regularization
+            "mid": {"noise_std": 0.03, "enabled": True},      # Moderate noise
+            "late": {"noise_std": 0.01, "enabled": True}      # Minimal noise for refinement
+        },
+    },
 
     #########
     # PATHS #
