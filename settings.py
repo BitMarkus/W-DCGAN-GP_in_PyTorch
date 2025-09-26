@@ -8,15 +8,15 @@ setting = {
     # TRAINING PARAMETERS #
     #######################
  
-    "batch_size": 35,                        
-    "num_epochs": 300, 
+    "batch_size": 32,                        
+    "num_epochs": 500, 
     # WGAN specific:
     "num_crit_training": 3,                 # Training critic more that generator
     "gradient_penalty_weight": 10,          # 10
 
     ################################
     # LEARNING RATES AND SCHEDULER #
-    #################################
+    ################################
 
     # GENERATOR:
     "gen_learning_rate": 0.0002,            # 2e-4 = 0.0002
@@ -113,7 +113,7 @@ setting = {
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
     # Number of filters (7x) for critic and generator
-    "gen_chan_per_layer": [512, 256, 128, 64, 32, 16, 8],
+    "gen_chan_per_layer": [512, 256, 128, 64, 64, 32, 32],
     # The Critic should have 1.2–2.5x the generator’s parameters
     "crit_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],   
 
