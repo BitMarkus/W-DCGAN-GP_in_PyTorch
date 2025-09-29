@@ -8,7 +8,7 @@ setting = {
     # TRAINING PARAMETERS #
     #######################
  
-    "batch_size": 30,                        
+    "batch_size": 32,                        
     "num_epochs": 500, 
     # WGAN specific:
     "num_crit_training": 3,                 # Training critic more that generator

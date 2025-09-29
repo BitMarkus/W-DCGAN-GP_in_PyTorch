@@ -293,24 +293,25 @@ class Train():
         
         # Calculate the optimal grid layout
         nrow = min(self.num_rows_sample_images, num_to_display)
-        ncol = (num_to_display + nrow - 1) // nrow  # Ceiling division
+        # ncol = (num_to_display + nrow - 1) // nrow  # Ceiling division
         
-        # Create a grid of images
-        image_grid = make_grid(image_unflat[:num_to_display], nrow=nrow)
+        # Create a grid of images with padding=0 to minimize spacing
+        image_grid = make_grid(image_unflat[:num_to_display], nrow=nrow, padding=0)
         
-        # Calculate figure size to get ~512px per image at 300 DPI
+        # Calculate figure size based on the ACTUAL grid dimensions
         target_dpi = 300
         
-        # Calculate figure size in inches (each image should be ~512px at the target DPI)
-        # Inches = Pixels / DPI
-        single_image_width_inches = 512 / target_dpi  # ~1.71 inches for 512px at 300 DPI
-        single_image_height_inches = 512 / target_dpi  # ~1.71 inches for 512px at 300 DPI
+        # Get the actual dimensions of the grid tensor
+        # image_grid shape: (channels, height, width)
+        grid_height_px = image_grid.size(1)
+        grid_width_px = image_grid.size(2)
         
-        fig_width = ncol * single_image_width_inches
-        fig_height = nrow * single_image_height_inches
+        # Convert grid dimensions to inches for matplotlib
+        fig_width_inches = grid_width_px / target_dpi
+        fig_height_inches = grid_height_px / target_dpi
         
-        # Create figure with the calculated size
-        plt.figure(figsize=(fig_width, fig_height), dpi=target_dpi)
+        # Create figure with the calculated size based on actual grid dimensions
+        plt.figure(figsize=(fig_width_inches, fig_height_inches), dpi=target_dpi)
         
         # Handle both grayscale and RGB images
         if image_grid.size(0) == 1:
@@ -330,7 +331,9 @@ class Train():
                 f"{pth_samples}/{filename}", 
                 bbox_inches='tight', 
                 pad_inches=0,
-                dpi=target_dpi  # Use the same target DPI for saving
+                dpi=target_dpi,
+                # Force the exact dimensions
+                figsize=(fig_width_inches, fig_height_inches)
             )
             plt.close()
         
@@ -338,6 +341,7 @@ class Train():
             plt.show()
         
         print(f"Sample images for epoch {epoch} were successfully saved in {pth_samples}")
+        # print(f"Grid dimensions: {nrow}x{ncol}, Output image size: {grid_width_px}x{grid_height_px} px")
         return True
 
     # Create noise vector(s) for the generator
