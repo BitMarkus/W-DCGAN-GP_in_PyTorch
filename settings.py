@@ -9,7 +9,7 @@ setting = {
     #######################
  
     "batch_size": 30,                        
-    "num_epochs": 100, 
+    "num_epochs": 500, 
     # WGAN specific:
     "num_crit_training": 3,                 # Training critic more that generator
     "gradient_penalty_weight": 10,          # 10
@@ -39,7 +39,7 @@ setting = {
     "crit_use_cosine_ann_wr": True,
     # CosineAnnealingWarmRestarts:
     "crit_lrs_eta_min": 0.000005,           # 0.000005 (4:1 ratio lr)
-    "crit_lrs_t_0": 30,                     # 25
+    "crit_lrs_t_0": 25,                     # 25
     "crit_lrs_t_mult": 1,                   # when 1 the lr resets every crit_lrs_t_0 cycle, when 2 the period doubles after each restart (e.g., 10, 20, 40, 80 epochs...)
 
     #################
@@ -113,7 +113,7 @@ setting = {
     "latent_vector_size": 512,              # Size of z latent vector (i.e. size of generator input)
     "size_min_feature_maps": 4,             # 4 = 4x4 pixels is the minimum size, from where an image is scaled up 
     # Number of filters (7x) for critic and generator
-    "gen_chan_per_layer": [512, 256, 128, 128, 64, 64, 32],
+    "gen_chan_per_layer": [512, 256, 128, 64, 64, 32, 32],
     # The Critic should have 1.2–2.5x the generator’s parameters
     "crit_chan_per_layer": [64, 128, 128, 256, 256, 512, 512],   
 
@@ -155,7 +155,7 @@ setting = {
     ########################
 
     # Master switch for progressive training
-    "use_progressive_params": True,  
+    "use_progressive_params": False,  
 
     # Progressive parameter configuration (as percentages of total epochs)
     "progressive_phases": {
