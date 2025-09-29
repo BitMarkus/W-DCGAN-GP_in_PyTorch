@@ -291,11 +291,11 @@ class Train():
         num_available_images = image_unflat.size(0)
         num_to_display = min(self.num_sample_images, num_available_images)
         
-        # Calculate the optimal grid layout
+        # Calculate the number of rows for the grid
         nrow = min(self.num_rows_sample_images, num_to_display)
-        # ncol = (num_to_display + nrow - 1) // nrow  # Ceiling division
         
         # Create a grid of images with padding=0 to minimize spacing
+        # make_grid automatically calculates the number of columns based on nrow
         image_grid = make_grid(image_unflat[:num_to_display], nrow=nrow, padding=0)
         
         # Calculate figure size based on the ACTUAL grid dimensions
@@ -331,9 +331,7 @@ class Train():
                 f"{pth_samples}/{filename}", 
                 bbox_inches='tight', 
                 pad_inches=0,
-                dpi=target_dpi,
-                # Force the exact dimensions
-                figsize=(fig_width_inches, fig_height_inches)
+                dpi=target_dpi
             )
             plt.close()
         
@@ -341,7 +339,7 @@ class Train():
             plt.show()
         
         print(f"Sample images for epoch {epoch} were successfully saved in {pth_samples}")
-        # print(f"Grid dimensions: {nrow}x{ncol}, Output image size: {grid_width_px}x{grid_height_px} px")
+        # print(f"Grid layout: {nrow} rows, Output image size: {grid_width_px}x{grid_height_px} px")
         return True
 
     # Create noise vector(s) for the generator
